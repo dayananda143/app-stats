@@ -1,0 +1,46 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const db = new Database(path.join(__dirname, '../data/app-stats.db'));
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS process_history (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    name      TEXT NOT NULL,
+    ts        INTEGER NOT NULL,
+    cpu       REAL,
+    memory    INTEGER,
+    status    TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS system_history (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts        INTEGER NOT NULL,
+    cpu       REAL,
+    mem_used  INTEGER,
+    temp      REAL,
+    net_in    INTEGER,
+    net_out   INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS alerts (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts        INTEGER NOT NULL,
+    type      TEXT NOT NULL,
+    title     TEXT NOT NULL,
+    detail    TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_proc_history_name_ts ON process_history(name, ts);
+  CREATE INDEX IF NOT EXISTS idx_sys_history_ts ON system_history(ts);
+  CREATE INDEX IF NOT EXISTS idx_alerts_ts ON alerts(ts DESC);
+`);
+
+// Prune data older than 25 hours every hour
+setInterval(() => {
+  const cutoff = Date.now() - 25 * 60 * 60 * 1000;
+  db.prepare('DELETE FROM process_history WHERE ts < ?').run(cutoff);
+  db.prepare('DELETE FROM system_history WHERE ts < ?').run(cutoff);
+}, 60 * 60 * 1000);
+
+module.exports = db;
