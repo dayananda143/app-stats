@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { io } from 'socket.io-client';
 import SystemStats from './components/SystemStats';
 import ProcessCard from './components/ProcessCard';
@@ -22,6 +23,7 @@ function authFetch(url, options = {}, token) {
 }
 
 export default function App() {
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW();
   const [token, setToken] = useState(() => localStorage.getItem('app-stats-token'));
   const [processes, setProcesses] = useState([]);
   const [system, setSystem] = useState(null);
@@ -210,6 +212,21 @@ export default function App() {
         />
       )}
       {settingsModal && <SettingsModal token={token} onClose={() => setSettingsModal(false)} />}
+
+      {needRefresh && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-indigo-600 text-white rounded-2xl p-4 flex items-center justify-between shadow-xl">
+          <div>
+            <div className="text-sm font-semibold">Update available</div>
+            <div className="text-xs text-indigo-200 mt-0.5">New version ready to install</div>
+          </div>
+          <button
+            onClick={() => updateServiceWorker(true)}
+            className="px-4 py-2 bg-white text-indigo-600 font-semibold text-sm rounded-xl shrink-0"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
     </div>
   );
 }
