@@ -585,7 +585,6 @@ async function broadcastStats() {
     }
 
     // Process CPU / RAM / stuck alerts
-    const cooldownMs = (cfg.alertCooldownMinutes || 15) * 60 * 1000;
     processes.forEach(p => {
       if (!processResourceAlerts[p.name]) processResourceAlerts[p.name] = { cpuHighAt: null, cpuAlerted: false, ramHighAt: null, ramAlerted: false, stuckSince: null, stuckAlerted: false };
       const rs = processResourceAlerts[p.name];
