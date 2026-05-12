@@ -28,11 +28,9 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   const memHistory = useMemo(() => (proc.history || []).map(h => h.mem), [proc.history]);
   const hasMemLeak = useMemo(() => detectMemLeak(proc.history), [proc.history]);
 
-  // Inline note editor
   const [note, setNote] = useState(proc.note || '');
   const [editingNote, setEditingNote] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
-  const noteRef = useRef(null);
 
   useEffect(() => {
     if (!editingNote) setNote(proc.note || '');
@@ -53,65 +51,70 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   };
 
   return (
-    <div className={`bg-slate-800 rounded-xl border p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-700 hover:border-yellow-600' : 'border-slate-700 hover:border-slate-600'}`}>
+    <div className={`bg-slate-800 rounded-xl border p-3 sm:p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-700' : 'border-slate-700'}`}>
+
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-white truncate">{proc.name}</h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+          {/* Name + badges */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h3 className="font-semibold text-white text-sm truncate max-w-[140px] sm:max-w-none">{proc.name}</h3>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
               isOnline
                 ? 'border-emerald-800 bg-emerald-900/40 text-emerald-400'
                 : 'border-slate-600 bg-slate-700 text-slate-400'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[proc.status] || 'bg-slate-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_COLORS[proc.status] || 'bg-slate-400'}`} />
               {proc.status}
             </span>
             {proc.port && (
-              <span className="text-xs px-2 py-0.5 rounded-full border border-slate-600 bg-slate-700/50 text-slate-400">
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-slate-600 bg-slate-700/50 text-slate-400 shrink-0">
                 :{proc.port}
               </span>
             )}
             {proc.dbSize && (
-              <span className="text-xs px-2 py-0.5 rounded-full border border-indigo-800 bg-indigo-900/30 text-indigo-400" title={`${proc.dbSize.type} database`}>
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-indigo-800 bg-indigo-900/30 text-indigo-400 shrink-0">
                 DB {formatBytes(proc.dbSize.bytes)}
               </span>
             )}
             {hasMemLeak && (
-              <span className="text-xs px-2 py-0.5 rounded-full border border-yellow-700 bg-yellow-900/30 text-yellow-400" title="Memory usage has been steadily increasing">
-                ⚠ mem leak?
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-yellow-700 bg-yellow-900/30 text-yellow-400 shrink-0">
+                ⚠ leak?
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+
+          {/* Meta */}
+          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
             <span>PID {proc.pid || '—'}</span>
-            <span>ID #{proc.pmId}</span>
-            {proc.execMode && proc.execMode !== 'fork_mode' && (
-              <span className="text-violet-400">{proc.execMode}</span>
-            )}
+            <span>#{proc.pmId}</span>
           </div>
+
+          {/* Link */}
           {proc.link && (
             <a
               href={proc.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-1 text-xs text-indigo-400 hover:text-indigo-300 hover:underline truncate max-w-full"
+              className="inline-block mt-1 text-xs text-indigo-400 hover:underline truncate max-w-full"
               onClick={e => e.stopPropagation()}
             >
               {proc.link.replace('https://', '')}
             </a>
           )}
         </div>
+
+        {/* Right: restarts + uptime */}
         <div className="text-xs text-slate-500 text-right shrink-0">
-          <div>{proc.restarts} restarts</div>
+          <div>{proc.restarts}↺</div>
           {isOnline && proc.uptime && (
             <div className="text-slate-400">{formatUptime(Date.now() - proc.uptime)}</div>
           )}
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* CPU + Memory stats */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <StatBlock
           label="CPU"
           value={`${(proc.cpu || 0).toFixed(1)}%`}
@@ -122,7 +125,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
           active={isOnline}
         />
         <StatBlock
-          label="Memory"
+          label="RAM"
           value={formatBytes(proc.memory || 0)}
           percent={((proc.memory || 0) / (512 * 1024 * 1024)) * 100}
           color="bg-violet-500"
@@ -136,7 +139,6 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
       <div className="text-xs">
         {editingNote ? (
           <textarea
-            ref={noteRef}
             value={note}
             onChange={e => setNote(e.target.value)}
             onBlur={() => saveNote(note)}
@@ -148,38 +150,38 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
           />
         ) : (
           <div
-            className="flex items-start gap-1.5 cursor-pointer group"
+            className="flex items-start gap-1.5 cursor-pointer min-h-[28px] py-1"
             onClick={() => setEditingNote(true)}
           >
-            <span className="text-slate-600 group-hover:text-slate-400 transition-colors mt-0.5">✎</span>
-            <span className={note ? 'text-slate-400' : 'text-slate-600 group-hover:text-slate-500 italic'}>
+            <span className="text-slate-600 mt-0.5">✎</span>
+            <span className={note ? 'text-slate-400' : 'text-slate-600 italic'}>
               {savingNote ? 'Saving…' : note || 'Add note…'}
             </span>
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-1 border-t border-slate-700 flex-wrap">
+      {/* Actions — bigger touch targets on mobile */}
+      <div className="flex gap-1.5 sm:gap-2 pt-1 border-t border-slate-700 flex-wrap">
         {isOnline && (
-          <ActionBtn onClick={onRestart} disabled={loading} className="bg-amber-900/40 text-amber-400 hover:bg-amber-900/70 border-amber-800">
+          <ActionBtn onClick={onRestart} disabled={loading} className="bg-amber-900/40 text-amber-400 border-amber-800 active:bg-amber-900/80">
             {actionState === 'restart' ? '…' : 'Restart'}
           </ActionBtn>
         )}
         {isOnline && (
-          <ActionBtn onClick={onStop} disabled={loading} className="bg-red-900/40 text-red-400 hover:bg-red-900/70 border-red-800">
+          <ActionBtn onClick={onStop} disabled={loading} className="bg-red-900/40 text-red-400 border-red-800 active:bg-red-900/80">
             {actionState === 'stop' ? '…' : 'Stop'}
           </ActionBtn>
         )}
         {isStopped && (
-          <ActionBtn onClick={onStart} disabled={loading} className="bg-emerald-900/40 text-emerald-400 hover:bg-emerald-900/70 border-emerald-800">
+          <ActionBtn onClick={onStart} disabled={loading} className="bg-emerald-900/40 text-emerald-400 border-emerald-800 active:bg-emerald-900/80">
             {actionState === 'start' ? '…' : 'Start'}
           </ActionBtn>
         )}
-        <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-700 text-slate-300 hover:bg-slate-600 border-slate-600">
+        <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600">
           History
         </ActionBtn>
-        <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-700 text-slate-300 hover:bg-slate-600 border-slate-600 ml-auto">
+        <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600 ml-auto">
           Logs
         </ActionBtn>
         {proc.link && (
@@ -187,7 +189,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             href={proc.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1 text-xs font-medium rounded-md border border-indigo-800 bg-indigo-900/40 text-indigo-400 hover:bg-indigo-900/70 transition-colors"
+            className="px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border border-indigo-800 bg-indigo-900/40 text-indigo-400 active:bg-indigo-900/80 transition-colors"
           >
             Open ↗
           </a>
@@ -203,26 +205,28 @@ function StatBlock({ label, value, percent, color, history, sparkColor, active }
     <div className="bg-slate-900/50 rounded-lg p-2.5">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-slate-500">{label}</span>
-        <span className={`text-sm font-medium ${active ? 'text-white' : 'text-slate-500'}`}>{value}</span>
+        <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-500'}`}>{value}</span>
       </div>
       <div className="h-1 bg-slate-700 rounded-full mb-2">
         <div className={`h-1 rounded-full transition-all duration-500 ${color}`} style={{ width: `${clampedPercent}%` }} />
       </div>
-      <Sparkline data={history} color={sparkColor} width={80} height={20} />
+      {/* Responsive sparkline — fills full width */}
+      <Sparkline data={history} color={sparkColor} />
     </div>
   );
 }
 
-function Sparkline({ data, color = '#3b82f6', width = 80, height = 20 }) {
-  if (!data || data.length < 2) return <svg width={width} height={height} />;
+function Sparkline({ data, color = '#3b82f6' }) {
+  if (!data || data.length < 2) return <svg width="100%" height="20" />;
+  const W = 100, H = 20;
   const max = Math.max(...data, 0.001);
   const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * width;
-    const y = height - (v / max) * height * 0.9 + height * 0.05;
+    const x = (i / (data.length - 1)) * W;
+    const y = H - (v / max) * H * 0.9 + H * 0.05;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
       <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.8" />
     </svg>
   );
@@ -233,7 +237,7 @@ function ActionBtn({ children, onClick, disabled, className }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {children}
     </button>

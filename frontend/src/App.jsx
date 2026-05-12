@@ -56,10 +56,7 @@ export default function App() {
       transports: ['websocket', 'polling'],
       auth: { token },
     });
-
-    socket.on('connect_error', (err) => {
-      if (err.message === 'Unauthorized') logout();
-    });
+    socket.on('connect_error', (err) => { if (err.message === 'Unauthorized') logout(); });
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
     socket.on('stats', (data) => {
@@ -70,23 +67,18 @@ export default function App() {
           if (prev && prev !== curr) {
             const isCrash = curr === 'stopped' || curr === 'errored';
             const isRecovery = curr === 'online' && (prev === 'stopped' || prev === 'errored');
-            if (isCrash) {
-              new Notification(`${proc.name} crashed`, { body: `Status changed to ${curr}`, icon: '/favicon.ico' });
-            } else if (isRecovery) {
-              new Notification(`${proc.name} recovered`, { body: 'Process is back online', icon: '/favicon.ico' });
-            }
+            if (isCrash) new Notification(`${proc.name} crashed`, { body: `Status: ${curr}`, icon: '/apple-touch-icon.png' });
+            else if (isRecovery) new Notification(`${proc.name} recovered`, { body: 'Back online', icon: '/apple-touch-icon.png' });
           }
           prevStatuses.current[proc.name] = curr;
         });
       } else {
         data.processes.forEach(p => { prevStatuses.current[p.name] = p.status; });
       }
-
       setProcesses(data.processes);
       setSystem(data.system);
       setLastUpdated(new Date());
     });
-
     return () => socket.disconnect();
   }, [token]);
 
@@ -94,11 +86,8 @@ export default function App() {
     setActionState(prev => ({ ...prev, [name]: action }));
     try {
       await authFetch(`/api/processes/${encodeURIComponent(name)}/${action}`, { method: 'POST' }, token);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTimeout(() => setActionState(prev => ({ ...prev, [name]: null })), 2000);
-    }
+    } catch (e) { console.error(e); }
+    finally { setTimeout(() => setActionState(prev => ({ ...prev, [name]: null })), 2000); }
   }, [token]);
 
   if (!token) return <LoginPage onLogin={setToken} />;
@@ -107,42 +96,56 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
-      {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-sm font-bold">A</div>
+      {/* Header — safe area top for iPhone notch */}
+      <div className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
+          {/* Logo + title */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-sm font-bold shrink-0">A</div>
             <div>
               <h1 className="text-base font-semibold text-white leading-tight">App Stats</h1>
-              <p className="text-xs text-slate-400">Process Monitor</p>
+              <p className="text-xs text-slate-400 hidden sm:block">Process Monitor</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              {connected ? 'Live' : 'Disconnected'}
+
+          {/* Right side nav */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Live indicator */}
+            <div className="flex items-center gap-1.5 mr-1">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              <span className="text-xs text-slate-400 hidden sm:block">{connected ? 'Live' : 'Off'}</span>
             </div>
-            {lastUpdated && (
-              <div className="text-xs text-slate-500 hidden md:block">
-                {lastUpdated.toLocaleTimeString()}
-              </div>
-            )}
-            <NavBtn onClick={() => setAlertsModal(true)}>Alerts</NavBtn>
-            <NavBtn onClick={() => setSettingsModal(true)}>Settings</NavBtn>
-            <button
-              onClick={logout}
-              className="text-xs px-3 py-1 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
-            >
-              Sign out
-            </button>
+
+            {/* Alerts */}
+            <IconBtn onClick={() => setAlertsModal(true)} title="Alert History">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </IconBtn>
+
+            {/* Settings */}
+            <IconBtn onClick={() => setSettingsModal(true)} title="Settings">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </IconBtn>
+
+            {/* Sign out */}
+            <IconBtn onClick={logout} title="Sign out">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </IconBtn>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      {/* Page content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         {/* Summary row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryCard label="Total Processes" value={processes.length} icon="⚙️" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <SummaryCard label="Processes" value={processes.length} icon="⚙️" />
           <SummaryCard label="Online" value={onlineCount} icon="🟢" valueClass="text-emerald-400" />
           <SummaryCard label="Stopped" value={processes.length - onlineCount} icon="🔴" valueClass="text-red-400" />
           <DiskSummaryCard system={system} onClick={() => system?.disk && setDiskModal(true)} />
@@ -150,17 +153,15 @@ export default function App() {
 
         {/* System stats */}
         {system && (
-          <SystemStats
-            system={system}
-            onRamClick={() => setRamModal(true)}
-            token={token}
-          />
+          <SystemStats system={system} onRamClick={() => setRamModal(true)} token={token} />
         )}
 
         {/* Process grid */}
         <div>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Processes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Processes <span className="text-slate-600 font-normal normal-case tracking-normal">({processes.length})</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {processes.map(proc => (
               <ProcessCard
                 key={proc.name}
@@ -178,33 +179,22 @@ export default function App() {
         </div>
       </div>
 
-      {logModal && (
-        <LogModal name={logModal.name} token={token} onClose={() => setLogModal(null)} />
-      )}
-      {ramModal && system && (
-        <RamModal system={system} token={token} onClose={() => setRamModal(false)} />
-      )}
-      {diskModal && system && (
-        <DiskModal system={system} token={token} onClose={() => setDiskModal(false)} />
-      )}
-      {historyModal && (
-        <HistoryModal name={historyModal} token={token} onClose={() => setHistoryModal(null)} />
-      )}
-      {alertsModal && (
-        <AlertsModal token={token} onClose={() => setAlertsModal(false)} />
-      )}
-      {settingsModal && (
-        <SettingsModal token={token} onClose={() => setSettingsModal(false)} />
-      )}
+      {logModal && <LogModal name={logModal.name} token={token} onClose={() => setLogModal(null)} />}
+      {ramModal && system && <RamModal system={system} token={token} onClose={() => setRamModal(false)} />}
+      {diskModal && system && <DiskModal system={system} token={token} onClose={() => setDiskModal(false)} />}
+      {historyModal && <HistoryModal name={historyModal} token={token} onClose={() => setHistoryModal(null)} />}
+      {alertsModal && <AlertsModal token={token} onClose={() => setAlertsModal(false)} />}
+      {settingsModal && <SettingsModal token={token} onClose={() => setSettingsModal(false)} />}
     </div>
   );
 }
 
-function NavBtn({ onClick, children }) {
+function IconBtn({ onClick, title, children }) {
   return (
     <button
       onClick={onClick}
-      className="text-xs px-3 py-1 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors hidden sm:block"
+      title={title}
+      className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-700 transition-colors"
     >
       {children}
     </button>
@@ -213,7 +203,7 @@ function NavBtn({ onClick, children }) {
 
 function SummaryCard({ label, value, icon, valueClass = 'text-white' }) {
   return (
-    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+    <div className="bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-700">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-slate-400">{label}</span>
         <span className="text-sm">{icon}</span>
@@ -232,17 +222,13 @@ function DiskSummaryCard({ system, onClick }) {
   const textColor = percent > 90 ? 'text-red-400' : percent > 75 ? 'text-yellow-400' : 'text-emerald-400';
 
   return (
-    <div
-      className="bg-slate-800 rounded-xl p-4 border border-slate-700 cursor-pointer hover:border-emerald-700 transition-colors"
-      onClick={onClick}
-    >
+    <div className="bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-700 cursor-pointer active:bg-slate-750 hover:border-emerald-700 transition-colors" onClick={onClick}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400">Disk Space</span>
+        <span className="text-xs text-slate-400">Disk</span>
         <span className="text-xs text-slate-500">↗</span>
       </div>
-      <div className={`text-xl font-bold ${textColor}`}>{formatBytes(used)} used</div>
-      <div className="text-xs text-slate-400 mt-0.5">{formatBytes(free)} free</div>
-      <div className="text-xs text-slate-500 mb-2">{percent}% of {formatBytes(total)}</div>
+      <div className={`text-lg sm:text-xl font-bold ${textColor}`}>{formatBytes(used)}</div>
+      <div className="text-xs text-slate-500 mb-1.5">{percent}% of {formatBytes(total)}</div>
       <div className="h-1.5 bg-slate-700 rounded-full">
         <div className={`h-1.5 rounded-full transition-all duration-700 ${pctColor}`} style={{ width: `${percent}%` }} />
       </div>
@@ -251,7 +237,7 @@ function DiskSummaryCard({ system, onClick }) {
 }
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
+  if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
