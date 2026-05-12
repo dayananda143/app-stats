@@ -13,6 +13,11 @@ export default function AlertsModal({ token, onClose }) {
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     fetch('/api/alerts?limit=200', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
@@ -52,7 +57,7 @@ export default function AlertsModal({ token, onClose }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4">
           {loading ? (
             <div className="text-slate-400 text-center py-10">Loading…</div>
           ) : alerts.length === 0 ? (

@@ -14,6 +14,11 @@ export default function DiskModal({ system, token, onClose }) {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   const total = system?.disk?.size || 1;
   const used  = system?.disk?.used || 0;
   const free  = system?.disk?.free || 0;
@@ -39,7 +44,7 @@ export default function DiskModal({ system, token, onClose }) {
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-5">
+        <div className="overflow-y-auto overscroll-contain flex-1 p-5 space-y-5">
           {/* Summary */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-slate-400 mb-1">

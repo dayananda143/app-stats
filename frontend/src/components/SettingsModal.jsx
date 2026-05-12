@@ -9,6 +9,11 @@ export default function SettingsModal({ token, onClose }) {
   const [removingFaceId, setRemovingFaceId] = useState(false);
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  useEffect(() => {
     fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(setForm)
@@ -63,7 +68,7 @@ export default function SettingsModal({ token, onClose }) {
           <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
         </div>
 
-        <div className="p-4 space-y-5">
+        <div className="overflow-y-auto overscroll-contain p-4 space-y-5">
           {!form ? (
             <div className="text-slate-400 text-center py-6">Loading…</div>
           ) : (

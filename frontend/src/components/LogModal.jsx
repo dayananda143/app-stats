@@ -7,6 +7,12 @@ export default function LogModal({ name, token, onClose }) {
   const [downloading, setDownloading] = useState(false);
   const bottomRef = useRef(null);
 
+  // Prevent background scroll on iOS while modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     fetch(`/api/processes/${encodeURIComponent(name)}/logs?lines=150`, {
@@ -89,7 +95,7 @@ export default function LogModal({ name, token, onClose }) {
         </div>
 
         {/* Log body */}
-        <div className="flex-1 overflow-y-auto p-4 font-mono text-xs bg-slate-950 rounded-b-2xl">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 font-mono text-xs bg-slate-950 rounded-b-2xl">
           {loading ? (
             <div className="text-slate-400 text-center py-8">Loading logs…</div>
           ) : lines.length === 0 ? (

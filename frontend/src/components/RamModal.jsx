@@ -14,6 +14,11 @@ export default function RamModal({ system, token, onClose }) {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   const total = system.memory?.total || 1;
   const used = system.memory?.used || 0;
   const free = system.memory?.free || 0;
@@ -43,7 +48,7 @@ export default function RamModal({ system, token, onClose }) {
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-5">
+        <div className="overflow-y-auto overscroll-contain flex-1 p-5 space-y-5">
           {/* Summary bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-slate-400 mb-1">
