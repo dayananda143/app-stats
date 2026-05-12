@@ -147,8 +147,11 @@ function logAlert(type, title, detail) {
 
 // ─── Alert state ─────────────────────────────────────────────────────────────
 const processStates = {};
+const processResourceAlerts = {}; // { name: { cpuHighAt, cpuAlerted, ramHighAt, ramAlerted, stuckSince, stuckAlerted } }
 let tempAlertState = 'normal';
 let lastTempAlertAt = 0;
+let sysRamAlertState = 'normal';
+let lastSysRamAlertAt = 0;
 
 // ─── Express + Socket.io ─────────────────────────────────────────────────────
 const app = express();
@@ -578,6 +581,64 @@ async function broadcastStats() {
         tempAlertState = 'normal'; lastTempAlertAt = alertNow;
         sendTempAlert(temp, 'recovered').catch(e => console.error('[mailer]', e.message));
         logAlert('temp_ok', `CPU temperature recovered ${temp}°C`, null);
+      }
+    }
+
+    // Process CPU / RAM / stuck alerts
+    const cooldownMs = (cfg.alertCooldownMinutes || 15) * 60 * 1000;
+    processes.forEach(p => {
+      if (!processResourceAlerts[p.name]) processResourceAlerts[p.name] = { cpuHighAt: null, cpuAlerted: false, ramHighAt: null, ramAlerted: false, stuckSince: null, stuckAlerted: false };
+      const rs = processResourceAlerts[p.name];
+      if (p.status !== 'online') { Object.assign(rs, { cpuHighAt: null, cpuAlerted: false, ramHighAt: null, ramAlerted: false, stuckSince: null, stuckAlerted: false }); return; }
+
+      // CPU threshold
+      if (cfg.cpuAlertEnabled) {
+        const thr = cfg.cpuAlertThreshold || 80;
+        if (p.cpu > thr) {
+          if (!rs.cpuHighAt) rs.cpuHighAt = alertNow;
+          if (!rs.cpuAlerted && alertNow - rs.cpuHighAt > cooldownMs) {
+            rs.cpuAlerted = true;
+            logAlert('cpu_high', `${p.name} CPU high: ${p.cpu.toFixed(1)}%`, `Threshold: ${thr}%`);
+          }
+        } else { rs.cpuHighAt = null; rs.cpuAlerted = false; }
+      }
+
+      // RAM threshold
+      if (cfg.ramAlertEnabled) {
+        const thrBytes = (cfg.ramAlertThresholdMb || 400) * 1024 * 1024;
+        if (p.memory > thrBytes) {
+          if (!rs.ramHighAt) rs.ramHighAt = alertNow;
+          if (!rs.ramAlerted && alertNow - rs.ramHighAt > cooldownMs) {
+            rs.ramAlerted = true;
+            logAlert('ram_high', `${p.name} RAM high: ${(p.memory / 1024 / 1024).toFixed(0)}MB`, `Threshold: ${cfg.ramAlertThresholdMb}MB`);
+          }
+        } else { rs.ramHighAt = null; rs.ramAlerted = false; }
+      }
+
+      // Stuck process (sustained high CPU)
+      if (cfg.stuckAlertEnabled) {
+        const sthrCpu = cfg.stuckCpuThreshold || 85;
+        const sthrMs = (cfg.stuckMinutes || 5) * 60 * 1000;
+        if (p.cpu > sthrCpu) {
+          if (!rs.stuckSince) rs.stuckSince = alertNow;
+          if (!rs.stuckAlerted && alertNow - rs.stuckSince > sthrMs) {
+            rs.stuckAlerted = true;
+            logAlert('stuck', `${p.name} may be stuck`, `CPU ${p.cpu.toFixed(1)}% for ${cfg.stuckMinutes}+ min`);
+          }
+        } else { rs.stuckSince = null; rs.stuckAlerted = false; }
+      }
+    });
+
+    // System RAM alert
+    if (cfg.sysRamAlertEnabled) {
+      const ramPct = systemStats.memory?.percent || 0;
+      const sysRamThr = cfg.sysRamAlertPercent || 85;
+      if (ramPct >= sysRamThr && sysRamAlertState === 'normal' && alertNow - lastSysRamAlertAt > cooldownMs) {
+        sysRamAlertState = 'high'; lastSysRamAlertAt = alertNow;
+        logAlert('sys_ram_high', `System RAM high: ${ramPct}%`, `Threshold: ${sysRamThr}%`);
+      } else if (ramPct < sysRamThr - 5 && sysRamAlertState === 'high') {
+        sysRamAlertState = 'normal';
+        logAlert('sys_ram_ok', `System RAM recovered: ${ramPct}%`, null);
       }
     }
 

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 
 const TYPE_CONFIG = {
-  crash:    { label: 'Crash',      color: 'text-red-400',     bg: 'bg-red-900/30 border-red-800' },
-  recovery: { label: 'Recovery',   color: 'text-emerald-400', bg: 'bg-emerald-900/30 border-emerald-800' },
-  temp_high:{ label: 'Temp High',  color: 'text-orange-400',  bg: 'bg-orange-900/30 border-orange-800' },
-  temp_ok:  { label: 'Temp OK',    color: 'text-blue-400',    bg: 'bg-blue-900/30 border-blue-800' },
+  crash:        { label: 'Crash',        color: 'text-red-400',     bg: 'bg-red-900/30 border-red-800' },
+  recovery:     { label: 'Recovery',     color: 'text-emerald-400', bg: 'bg-emerald-900/30 border-emerald-800' },
+  temp_high:    { label: 'Temp High',    color: 'text-orange-400',  bg: 'bg-orange-900/30 border-orange-800' },
+  temp_ok:      { label: 'Temp OK',      color: 'text-blue-400',    bg: 'bg-blue-900/30 border-blue-800' },
+  cpu_high:     { label: 'CPU High',     color: 'text-yellow-400',  bg: 'bg-yellow-900/30 border-yellow-800' },
+  ram_high:     { label: 'RAM High',     color: 'text-purple-400',  bg: 'bg-purple-900/30 border-purple-800' },
+  sys_ram_high: { label: 'Sys RAM High', color: 'text-red-400',     bg: 'bg-red-900/30 border-red-800' },
+  sys_ram_ok:   { label: 'Sys RAM OK',   color: 'text-emerald-400', bg: 'bg-emerald-900/30 border-emerald-800' },
+  stuck:        { label: 'Stuck',        color: 'text-rose-400',    bg: 'bg-rose-900/30 border-rose-800' },
 };
 
 export default function AlertsModal({ token, onClose, onCleared }) {

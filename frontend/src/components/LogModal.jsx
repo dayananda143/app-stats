@@ -6,6 +6,7 @@ export default function LogModal({ name, token, onClose }) {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [streaming, setStreaming] = useState(true);
+  const [search, setSearch] = useState('');
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
   const pollerRef = useRef(null);
@@ -64,7 +65,8 @@ export default function LogModal({ name, token, onClose }) {
     setDownloading(false);
   };
 
-  const lines = tab === 'out' ? logs.out || [] : logs.err || [];
+  const allLines = tab === 'out' ? logs.out || [] : logs.err || [];
+  const lines = search ? allLines.filter(l => l.toLowerCase().includes(search.toLowerCase())) : allLines;
 
   return (
     <div
@@ -106,6 +108,27 @@ export default function LogModal({ name, token, onClose }) {
               {downloading ? '…' : '↓ Download'}
             </button>
             <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
+          </div>
+        </div>
+
+        {/* Search bar */}
+        <div className="px-4 py-2 border-b border-slate-700">
+          <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Filter logs…"
+              className="flex-1 bg-transparent text-xs text-slate-300 placeholder-slate-600 focus:outline-none"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="text-slate-500 hover:text-slate-300 text-xs">
+                ✕ <span className="text-slate-600">{lines.length}/{allLines.length}</span>
+              </button>
+            )}
           </div>
         </div>
 

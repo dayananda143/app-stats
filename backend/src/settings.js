@@ -9,6 +9,15 @@ const DEFAULTS = {
   alertCooldownMinutes: 15,
   alertEmail: process.env.ALERT_TO || '',
   processAlerts: true,
+  cpuAlertEnabled: true,
+  cpuAlertThreshold: 80,
+  ramAlertEnabled: true,
+  ramAlertThresholdMb: 400,
+  sysRamAlertEnabled: true,
+  sysRamAlertPercent: 85,
+  stuckAlertEnabled: true,
+  stuckCpuThreshold: 85,
+  stuckMinutes: 5,
 };
 
 function load() {

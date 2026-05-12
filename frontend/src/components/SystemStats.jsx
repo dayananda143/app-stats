@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function SystemStats({ system, onRamClick, token }) {
+export default function SystemStats({ system, onRamClick, onHistoryClick, token }) {
   const memPercent = system.memory?.percent || 0;
   const diskPercent = system.disk?.use || 0;
   const [clearing, setClearing] = useState(false);
@@ -24,17 +24,22 @@ export default function SystemStats({ system, onRamClick, token }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">System</h2>
-        <button
-          onClick={clearCache}
-          disabled={clearing}
-          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
-            cleared
-              ? 'border-emerald-700 bg-emerald-900/30 text-emerald-400'
-              : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white'
-          }`}
-        >
-          {clearing ? 'Clearing…' : cleared ? '✓ Cleared' : 'Clear Cache'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={onHistoryClick} className="text-xs px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white transition-colors">
+            History
+          </button>
+          <button
+            onClick={clearCache}
+            disabled={clearing}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+              cleared
+                ? 'border-emerald-700 bg-emerald-900/30 text-emerald-400'
+                : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white'
+            }`}
+          >
+            {clearing ? 'Clearing…' : cleared ? '✓ Cleared' : 'Clear Cache'}
+          </button>
+        </div>
       </div>
 
       {/* Main stats — 2-col on mobile, 5-col on desktop. Uptime spans 2 cols on mobile. */}

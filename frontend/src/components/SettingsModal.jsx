@@ -108,6 +108,39 @@ export default function SettingsModal({ token, onClose }) {
                 </Field>
               </Section>
 
+              <Section title="Process CPU / RAM Alerts">
+                <Field label="CPU alert threshold (%)" hint="Alert when any process exceeds this CPU %">
+                  <div className="flex items-center gap-3">
+                    <NumberInput value={form.cpuAlertThreshold} onChange={v => update('cpuAlertThreshold', v)} min={10} max={100} />
+                    <Toggle value={form.cpuAlertEnabled} onChange={v => update('cpuAlertEnabled', v)} />
+                  </div>
+                </Field>
+                <Field label="RAM alert threshold (MB)" hint="Alert when any process exceeds this memory">
+                  <div className="flex items-center gap-3">
+                    <NumberInput value={form.ramAlertThresholdMb} onChange={v => update('ramAlertThresholdMb', v)} min={50} max={2000} />
+                    <Toggle value={form.ramAlertEnabled} onChange={v => update('ramAlertEnabled', v)} />
+                  </div>
+                </Field>
+                <Field label="Stuck: CPU % / minutes" hint="Alert when a process holds high CPU for this long">
+                  <div className="flex items-center gap-2">
+                    <NumberInput value={form.stuckCpuThreshold} onChange={v => update('stuckCpuThreshold', v)} min={50} max={100} />
+                    <span className="text-slate-500 text-sm shrink-0">for</span>
+                    <NumberInput value={form.stuckMinutes} onChange={v => update('stuckMinutes', v)} min={1} max={60} />
+                    <span className="text-slate-500 text-sm shrink-0">min</span>
+                    <Toggle value={form.stuckAlertEnabled} onChange={v => update('stuckAlertEnabled', v)} />
+                  </div>
+                </Field>
+              </Section>
+
+              <Section title="System RAM Alert">
+                <Field label="System RAM threshold (%)" hint="Alert when Pi RAM usage exceeds this">
+                  <div className="flex items-center gap-3">
+                    <NumberInput value={form.sysRamAlertPercent} onChange={v => update('sysRamAlertPercent', v)} min={50} max={99} />
+                    <Toggle value={form.sysRamAlertEnabled} onChange={v => update('sysRamAlertEnabled', v)} />
+                  </div>
+                </Field>
+              </Section>
+
               <Section title="Security">
                 <div className="flex items-center justify-between p-3 bg-slate-800/50 border border-slate-700 rounded-xl">
                   <div>
@@ -162,6 +195,14 @@ function Field({ label, hint, children }) {
       <label className="text-sm text-slate-300 block mb-1.5">{label}</label>
       {children}
       {hint && <div className="text-xs text-slate-500 mt-1">{hint}</div>}
+    </div>
+  );
+}
+
+function Toggle({ value, onChange }) {
+  return (
+    <div onClick={() => onChange(!value)} className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer shrink-0 ${value ? 'bg-indigo-600' : 'bg-slate-600'}`}>
+      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${value ? 'translate-x-4' : ''}`} />
     </div>
   );
 }

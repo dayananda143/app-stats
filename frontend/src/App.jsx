@@ -8,6 +8,7 @@ import DiskModal from './components/DiskModal';
 import HistoryModal from './components/HistoryModal';
 import AlertsModal from './components/AlertsModal';
 import SettingsModal from './components/SettingsModal';
+import SystemHistoryModal from './components/SystemHistoryModal';
 import LoginPage from './components/LoginPage';
 
 const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
@@ -35,6 +36,7 @@ export default function App() {
   const [historyModal, setHistoryModal] = useState(null);
   const [alertsModal, setAlertsModal] = useState(false);
   const [settingsModal, setSettingsModal] = useState(false);
+  const [systemHistoryModal, setSystemHistoryModal] = useState(false);
   const [actionState, setActionState] = useState({});
   const [alertCount, setAlertCount] = useState(0);
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('sort-by') || 'name');
@@ -212,7 +214,7 @@ export default function App() {
 
         {/* System stats */}
         {system && (
-          <SystemStats system={system} onRamClick={() => setRamModal(true)} token={token} />
+          <SystemStats system={system} onRamClick={() => setRamModal(true)} onHistoryClick={() => setSystemHistoryModal(true)} token={token} />
         )}
 
         {/* Process grid */}
@@ -263,6 +265,7 @@ export default function App() {
         />
       )}
       {settingsModal && <SettingsModal token={token} onClose={() => setSettingsModal(false)} />}
+      {systemHistoryModal && <SystemHistoryModal token={token} onClose={() => setSystemHistoryModal(false)} />}
     </div>
   );
 }
