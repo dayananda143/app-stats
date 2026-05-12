@@ -26,7 +26,9 @@ export default function App() {
   const [processes, setProcesses] = useState([]);
   const [system, setSystem] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [serverDown, setServerDown] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const offlineTimer = useRef(null);
   const [logModal, setLogModal] = useState(null);
   const [ramModal, setRamModal] = useState(false);
   const [diskModal, setDiskModal] = useState(false);
@@ -64,9 +66,17 @@ export default function App() {
       transports: ['websocket', 'polling'],
       auth: { token },
     });
-    socket.on('connect_error', (err) => { if (err.message === 'Unauthorized') logout(); });
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
+    const startOfflineTimer = () => {
+      clearTimeout(offlineTimer.current);
+      offlineTimer.current = setTimeout(() => setServerDown(true), 6000);
+    };
+    startOfflineTimer();
+    socket.on('connect_error', (err) => {
+      if (err.message === 'Unauthorized') logout();
+      startOfflineTimer();
+    });
+    socket.on('connect', () => { setConnected(true); setServerDown(false); clearTimeout(offlineTimer.current); });
+    socket.on('disconnect', () => { setConnected(false); startOfflineTimer(); });
     socket.on('stats', (data) => {
       if ('Notification' in window && Notification.permission === 'granted') {
         data.processes.forEach(proc => {
@@ -100,6 +110,7 @@ export default function App() {
   }, [token]);
 
   if (!token) return <LoginPage onLogin={setToken} />;
+  if (serverDown) return <OfflinePage />;
 
   const onlineCount = processes.filter(p => p.status === 'online').length;
 
@@ -260,6 +271,58 @@ function DiskSummaryCard({ system, onClick }) {
       <div className="text-xs text-slate-500 mb-1.5">{percent}% of {formatBytes(total)}</div>
       <div className="h-1.5 bg-slate-700 rounded-full">
         <div className={`h-1.5 rounded-full transition-all duration-700 ${pctColor}`} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function OfflinePage() {
+  const [secs, setSecs] = useState(30);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => {
+      if (s <= 1) { window.location.reload(); return 30; }
+      return s - 1;
+    }), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+      <div className="bg-slate-800 border border-slate-700 rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl">
+        {/* Icon */}
+        <div className="relative w-20 h-20 mx-auto mb-8">
+          <div className="w-20 h-20 rounded-2xl bg-indigo-600 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
+            </svg>
+          </div>
+          <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-red-500 rounded-full border-4 border-slate-800 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+
+        <h1 className="text-xl font-bold text-white mb-2">Server is Offline</h1>
+        <p className="text-sm text-slate-400 leading-relaxed mb-8">
+          App Stats can't be reached right now. The backend may be restarting or temporarily unavailable.
+        </p>
+
+        {/* Pulsing status */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+          <span className="text-xs text-slate-500">Retrying in <span className="text-slate-300 font-semibold">{secs}s</span></span>
+        </div>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm py-3 rounded-xl transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+          Try Again
+        </button>
       </div>
     </div>
   );
