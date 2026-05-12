@@ -37,6 +37,8 @@ export default function App() {
   const [settingsModal, setSettingsModal] = useState(false);
   const [actionState, setActionState] = useState({});
   const [alertCount, setAlertCount] = useState(0);
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('sort-by') || 'name');
+  const [sortDir, setSortDir] = useState(() => localStorage.getItem('sort-dir') || 'asc');
   const prevStatuses = useRef({});
 
   const unreadAlerts = Math.max(0, alertCount - parseInt(localStorage.getItem('alerts-seen-count') || '0'));
@@ -124,6 +126,22 @@ export default function App() {
 
   const onlineCount = processes.filter(p => p.status === 'online').length;
 
+  const cycleSort = (field) => {
+    const newDir = sortBy === field && sortDir === 'asc' ? 'desc' : 'asc';
+    setSortBy(field); setSortDir(newDir);
+    localStorage.setItem('sort-by', field); localStorage.setItem('sort-dir', newDir);
+  };
+
+  const statusOrder = { online: 0, launching: 1, stopping: 2, stopped: 3, errored: 4 };
+  const sorted = [...processes].sort((a, b) => {
+    let v = 0;
+    if (sortBy === 'cpu')    v = (a.cpu || 0) - (b.cpu || 0);
+    if (sortBy === 'memory') v = (a.memory || 0) - (b.memory || 0);
+    if (sortBy === 'status') v = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+    if (sortBy === 'name')   v = a.name.localeCompare(b.name);
+    return sortDir === 'asc' ? v : -v;
+  });
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
       {/* Header — safe area top for iPhone notch */}
@@ -199,11 +217,21 @@ export default function App() {
 
         {/* Process grid */}
         <div>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-            Processes <span className="text-slate-600 font-normal normal-case tracking-normal">({processes.length})</span>
-          </h2>
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Processes <span className="text-slate-600 font-normal normal-case tracking-normal">({processes.length})</span>
+            </h2>
+            <div className="flex items-center gap-1">
+              {['name','status','cpu','memory'].map(f => (
+                <button key={f} onClick={() => cycleSort(f)}
+                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${sortBy === f ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-700 text-slate-500 hover:text-slate-300'}`}>
+                  {f}{sortBy === f ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-            {processes.map(proc => (
+            {sorted.map(proc => (
               <ProcessCard
                 key={proc.name}
                 proc={proc}

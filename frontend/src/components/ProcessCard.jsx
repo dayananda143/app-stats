@@ -28,10 +28,19 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   const memHistory = useMemo(() => (proc.history || []).map(h => h.mem), [proc.history]);
   const hasMemLeak = useMemo(() => detectMemLeak(proc.history), [proc.history]);
 
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('collapsed-' + proc.name) || 'false'); } catch { return false; }
+  });
   const [note, setNote] = useState(proc.note || '');
   const [editingNote, setEditingNote] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('collapsed-' + proc.name, JSON.stringify(next));
+  };
 
   useEffect(() => {
     if (!editingNote) setNote(proc.note || '');
@@ -105,17 +114,23 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
           )}
         </div>
 
-        {/* Right: restarts + uptime */}
-        <div className="text-xs text-slate-500 text-right shrink-0">
-          <div>{proc.restarts}↺</div>
-          {isOnline && proc.uptime && (
-            <div className="text-slate-400">{formatUptime(Date.now() - proc.uptime)}</div>
-          )}
+        {/* Right: restarts + uptime + collapse */}
+        <div className="flex items-start gap-2 shrink-0">
+          <div className="text-xs text-slate-500 text-right">
+            <div>{proc.restarts}↺</div>
+            {isOnline && proc.uptime && (
+              <div className="text-slate-400">{formatUptime(Date.now() - proc.uptime)}</div>
+            )}
+          </div>
+          <button onClick={toggleCollapsed} className="text-slate-500 hover:text-slate-300 transition-colors mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* CPU + Memory stats */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+      {!collapsed && <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <StatBlock
           label="CPU"
           value={`${(proc.cpu || 0).toFixed(1)}%`}
@@ -134,10 +149,10 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
           sparkColor="#8b5cf6"
           active={isOnline}
         />
-      </div>
+      </div>}
 
       {/* Note */}
-      <div className="text-xs">
+      {!collapsed && <div className="text-xs">
         {editingNote ? (
           <textarea
             value={note}
@@ -160,7 +175,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             </span>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Actions */}
       <div className="pt-1 border-t border-slate-700">
