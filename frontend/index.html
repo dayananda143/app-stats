@@ -18,6 +18,15 @@
     <meta name="theme-color" content="#4f46e5" />
 
     <link rel="icon" type="image/png" href="/icon-192.png" />
+
+    <!-- Unregister any old service workers so they never serve stale files -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          regs.forEach(r => r.unregister());
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
