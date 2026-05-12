@@ -5,13 +5,32 @@ export default function SettingsModal({ token, onClose }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [faceIdRegistered, setFaceIdRegistered] = useState(false);
+  const [removingFaceId, setRemovingFaceId] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(setForm)
       .catch(() => setError('Failed to load settings'));
+    fetch('/api/auth/webauthn/registered')
+      .then(r => r.json())
+      .then(d => setFaceIdRegistered(d.registered))
+      .catch(() => {});
   }, [token]);
+
+  const removeFaceId = async () => {
+    if (!confirm('Remove Face ID from this account? You will need to use your password to log in.')) return;
+    setRemovingFaceId(true);
+    try {
+      await fetch('/api/auth/webauthn/credential', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFaceIdRegistered(false);
+    } catch {}
+    setRemovingFaceId(false);
+  };
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
@@ -82,6 +101,26 @@ export default function SettingsModal({ token, onClose }) {
                     <span className="text-sm text-slate-300">{form.processAlerts ? 'Enabled' : 'Disabled'}</span>
                   </label>
                 </Field>
+              </Section>
+
+              <Section title="Security">
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 border border-slate-700 rounded-xl">
+                  <div>
+                    <div className="text-sm text-slate-300">Face ID</div>
+                    <div className={`text-xs mt-0.5 ${faceIdRegistered ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      {faceIdRegistered ? '✓ Enabled on this account' : 'Not set up'}
+                    </div>
+                  </div>
+                  {faceIdRegistered && (
+                    <button
+                      onClick={removeFaceId}
+                      disabled={removingFaceId}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-red-800 bg-red-900/30 text-red-400 hover:bg-red-900/50 disabled:opacity-50 transition-colors"
+                    >
+                      {removingFaceId ? 'Removing…' : 'Remove'}
+                    </button>
+                  )}
+                </div>
               </Section>
 
               {error && <div className="text-red-400 text-xs">{error}</div>}

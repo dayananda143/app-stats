@@ -31,9 +31,19 @@ db.exec(`
     detail    TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS webauthn_credentials (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT NOT NULL,
+    credential_id TEXT NOT NULL UNIQUE,
+    public_key    TEXT NOT NULL,
+    counter       INTEGER NOT NULL DEFAULT 0,
+    created_at    INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_proc_history_name_ts ON process_history(name, ts);
   CREATE INDEX IF NOT EXISTS idx_sys_history_ts ON system_history(ts);
   CREATE INDEX IF NOT EXISTS idx_alerts_ts ON alerts(ts DESC);
+  CREATE INDEX IF NOT EXISTS idx_webauthn_username ON webauthn_credentials(username);
 `);
 
 // Prune data older than 25 hours every hour

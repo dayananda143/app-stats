@@ -10,6 +10,12 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} = require('@simplewebauthn/server');
 const db = require('./db');
 const { getNetworkIO } = require('./network');
 const settings = require('./settings');
@@ -163,6 +169,156 @@ app.post('/api/auth/login', (req, res) => {
   if (username !== process.env.ADMIN_USERNAME || !bcrypt.compareSync(password, process.env.ADMIN_PASSWORD_HASH || ''))
     return res.status(401).json({ error: 'Invalid username or password' });
   res.json({ token: jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' }) });
+});
+
+// ─── WebAuthn / Face ID ───────────────────────────────────────────────────────
+const RP_ID     = process.env.RP_ID     || 'localhost';
+const ORIGIN    = process.env.ORIGIN    || 'http://localhost:5173';
+const RP_NAME   = 'App Stats';
+
+// In-memory challenge store (single-user app, short-lived)
+const challengeStore = new Map();
+
+// Registration Step 1: get options (requires valid JWT — user already logged in)
+app.post('/api/auth/webauthn/register/options', requireAuth, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const existing = db.prepare('SELECT credential_id FROM webauthn_credentials WHERE username = ?').all(username);
+
+    const options = await generateRegistrationOptions({
+      rpName: RP_NAME,
+      rpID: RP_ID,
+      userID: Buffer.from(username, 'utf8'),
+      userName: username,
+      attestationType: 'none',
+      excludeCredentials: existing.map(c => ({
+        id: Buffer.from(c.credential_id, 'base64url'),
+        type: 'public-key',
+      })),
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        residentKey: 'preferred',
+      },
+    });
+
+    challengeStore.set(`reg:${username}`, options.challenge);
+    res.json(options);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Registration Step 2: verify and store
+app.post('/api/auth/webauthn/register/verify', requireAuth, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const expectedChallenge = challengeStore.get(`reg:${username}`);
+    if (!expectedChallenge) return res.status(400).json({ error: 'No challenge found — start registration again' });
+
+    const verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge,
+      expectedOrigin: ORIGIN,
+      expectedRPID: RP_ID,
+      requireUserVerification: true,
+    });
+
+    if (!verification.verified) return res.status(400).json({ error: 'Verification failed' });
+
+    const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
+
+    db.prepare(`
+      INSERT OR REPLACE INTO webauthn_credentials (username, credential_id, public_key, counter, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      username,
+      Buffer.from(credentialID).toString('base64url'),
+      Buffer.from(credentialPublicKey).toString('base64url'),
+      counter,
+      Date.now(),
+    );
+
+    challengeStore.delete(`reg:${username}`);
+    res.json({ verified: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Authentication Step 1: get options (public — no JWT needed yet)
+app.post('/api/auth/webauthn/auth/options', async (req, res) => {
+  try {
+    const username = process.env.ADMIN_USERNAME;
+    const credentials = db.prepare('SELECT credential_id FROM webauthn_credentials WHERE username = ?').all(username);
+
+    if (!credentials.length) return res.status(404).json({ error: 'No Face ID credential registered on this device' });
+
+    const options = await generateAuthenticationOptions({
+      rpID: RP_ID,
+      allowCredentials: credentials.map(c => ({
+        id: Buffer.from(c.credential_id, 'base64url'),
+        type: 'public-key',
+        transports: ['internal'],
+      })),
+      userVerification: 'required',
+    });
+
+    challengeStore.set('auth', options.challenge);
+    res.json(options);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Authentication Step 2: verify and return JWT (public)
+app.post('/api/auth/webauthn/auth/verify', async (req, res) => {
+  try {
+    const expectedChallenge = challengeStore.get('auth');
+    if (!expectedChallenge) return res.status(400).json({ error: 'No challenge found — try again' });
+
+    const credentialId = req.body.id;
+    const credential = db.prepare('SELECT * FROM webauthn_credentials WHERE credential_id = ?').get(credentialId);
+    if (!credential) return res.status(400).json({ error: 'Credential not found' });
+
+    const verification = await verifyAuthenticationResponse({
+      response: req.body,
+      expectedChallenge,
+      expectedOrigin: ORIGIN,
+      expectedRPID: RP_ID,
+      authenticator: {
+        credentialID: Buffer.from(credential.credential_id, 'base64url'),
+        credentialPublicKey: Buffer.from(credential.public_key, 'base64url'),
+        counter: credential.counter,
+      },
+    });
+
+    if (!verification.verified) return res.status(400).json({ error: 'Verification failed' });
+
+    // Update replay-attack counter
+    db.prepare('UPDATE webauthn_credentials SET counter = ? WHERE credential_id = ?')
+      .run(verification.authenticationInfo.newCounter, credential.credential_id);
+
+    challengeStore.delete('auth');
+
+    const token = jwt.sign({ username: credential.username }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Remove Face ID credential (requires JWT)
+app.delete('/api/auth/webauthn/credential', requireAuth, (req, res) => {
+  db.prepare('DELETE FROM webauthn_credentials WHERE username = ?').run(req.user.username);
+  res.json({ ok: true });
+});
+
+// Check if any credential is registered (public — so login page knows to show Face ID button)
+app.get('/api/auth/webauthn/registered', (req, res) => {
+  const count = db.prepare('SELECT COUNT(*) as n FROM webauthn_credentials WHERE username = ?')
+    .get(process.env.ADMIN_USERNAME).n;
+  res.json({ registered: count > 0 });
 });
 
 app.use('/api', requireAuth);
