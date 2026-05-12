@@ -10,6 +10,11 @@ import AlertsModal from './components/AlertsModal';
 import SettingsModal from './components/SettingsModal';
 import LoginPage from './components/LoginPage';
 
+// Force the service worker to check for updates on every load
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
+}
+
 const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
   ? 'http://localhost:3006'
   : window.location.origin;
