@@ -28,7 +28,7 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [serverDown, setServerDown] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const offlineTimer = useRef(null);
+  const healthPoller = useRef(null);
   const [logModal, setLogModal] = useState(null);
   const [ramModal, setRamModal] = useState(false);
   const [diskModal, setDiskModal] = useState(false);
@@ -66,17 +66,26 @@ export default function App() {
       transports: ['websocket', 'polling'],
       auth: { token },
     });
-    const startOfflineTimer = () => {
-      clearTimeout(offlineTimer.current);
-      offlineTimer.current = setTimeout(() => setServerDown(true), 6000);
+    const startHealthPolling = () => {
+      clearInterval(healthPoller.current);
+      healthPoller.current = setInterval(async () => {
+        try {
+          const res = await fetch('/api/health', { signal: AbortSignal.timeout(4000) });
+          if (res.ok) setServerDown(false);
+          else setServerDown(true);
+        } catch {
+          setServerDown(true);
+        }
+      }, 5000);
     };
-    startOfflineTimer();
+    const stopHealthPolling = () => clearInterval(healthPoller.current);
+
     socket.on('connect_error', (err) => {
       if (err.message === 'Unauthorized') logout();
-      startOfflineTimer();
+      startHealthPolling();
     });
-    socket.on('connect', () => { setConnected(true); setServerDown(false); clearTimeout(offlineTimer.current); });
-    socket.on('disconnect', () => { setConnected(false); startOfflineTimer(); });
+    socket.on('connect', () => { setConnected(true); setServerDown(false); stopHealthPolling(); });
+    socket.on('disconnect', () => { setConnected(false); startHealthPolling(); });
     socket.on('stats', (data) => {
       if ('Notification' in window && Notification.permission === 'granted') {
         data.processes.forEach(proc => {
@@ -98,7 +107,7 @@ export default function App() {
       if (data.alertCount !== undefined) setAlertCount(data.alertCount);
       setLastUpdated(new Date());
     });
-    return () => socket.disconnect();
+    return () => { socket.disconnect(); stopHealthPolling(); };
   }, [token]);
 
   const doAction = useCallback(async (name, action) => {

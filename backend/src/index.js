@@ -163,6 +163,9 @@ io.use((socket, next) => {
 app.use(cors());
 app.use(express.json());
 
+// ─── Health check (no auth) ───────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
 // ─── Public: login ────────────────────────────────────────────────────────────
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
