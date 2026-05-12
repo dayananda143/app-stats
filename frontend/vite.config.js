@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',       // show banner instead of silently auto-updating
+      registerType: 'autoUpdate',
       manifest: false,              // we already have public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
