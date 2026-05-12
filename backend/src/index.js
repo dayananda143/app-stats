@@ -587,7 +587,8 @@ async function broadcastStats() {
         .run(now, systemStats.cpu, mem.used, temp, netIO.rxBps, netIO.txBps);
     }
 
-    io.emit('stats', { processes, system: systemStats });
+    const alertCount = db.prepare('SELECT COUNT(*) as n FROM alerts').get().n;
+    io.emit('stats', { processes, system: systemStats, alertCount });
   } catch (err) {
     console.error('[broadcast]', err.message);
   }

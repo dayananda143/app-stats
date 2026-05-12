@@ -7,7 +7,7 @@ const TYPE_CONFIG = {
   temp_ok:  { label: 'Temp OK',    color: 'text-blue-400',    bg: 'bg-blue-900/30 border-blue-800' },
 };
 
-export default function AlertsModal({ token, onClose }) {
+export default function AlertsModal({ token, onClose, onCleared }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
@@ -30,6 +30,7 @@ export default function AlertsModal({ token, onClose }) {
     await fetch('/api/alerts', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     setAlerts([]);
     setClearing(false);
+    onCleared?.();
   };
 
   return (
