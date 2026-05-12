@@ -31,6 +31,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   const [note, setNote] = useState(proc.note || '');
   const [editingNote, setEditingNote] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
     if (!editingNote) setNote(proc.note || '');
@@ -161,38 +162,68 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
         )}
       </div>
 
-      {/* Actions — bigger touch targets on mobile */}
-      <div className="flex gap-1.5 sm:gap-2 pt-1 border-t border-slate-700 flex-wrap">
-        {isOnline && (
-          <ActionBtn onClick={onRestart} disabled={loading} className="bg-amber-900/40 text-amber-400 border-amber-800 active:bg-amber-900/80">
-            {actionState === 'restart' ? '…' : 'Restart'}
-          </ActionBtn>
-        )}
-        {isOnline && (
-          <ActionBtn onClick={onStop} disabled={loading} className="bg-red-900/40 text-red-400 border-red-800 active:bg-red-900/80">
-            {actionState === 'stop' ? '…' : 'Stop'}
-          </ActionBtn>
-        )}
-        {isStopped && (
-          <ActionBtn onClick={onStart} disabled={loading} className="bg-emerald-900/40 text-emerald-400 border-emerald-800 active:bg-emerald-900/80">
-            {actionState === 'start' ? '…' : 'Start'}
-          </ActionBtn>
-        )}
-        <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600">
-          History
-        </ActionBtn>
-        <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600 ml-auto">
-          Logs
-        </ActionBtn>
-        {proc.link && (
-          <a
-            href={proc.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border border-indigo-800 bg-indigo-900/40 text-indigo-400 active:bg-indigo-900/80 transition-colors"
-          >
-            Open ↗
-          </a>
+      {/* Actions */}
+      <div className="pt-1 border-t border-slate-700">
+        {confirmAction ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-300 flex-1">
+              {confirmAction === 'restart' && 'Restart '}
+              {confirmAction === 'stop' && 'Stop '}
+              {confirmAction === 'start' && 'Start '}
+              <span className="font-semibold text-white">{proc.name}</span>?
+            </span>
+            <button
+              onClick={() => {
+                setConfirmAction(null);
+                if (confirmAction === 'restart') onRestart();
+                else if (confirmAction === 'stop') onStop();
+                else if (confirmAction === 'start') onStart();
+              }}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => setConfirmAction(null)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+            {isOnline && (
+              <ActionBtn onClick={() => setConfirmAction('restart')} disabled={loading} className="bg-amber-900/40 text-amber-400 border-amber-800 active:bg-amber-900/80">
+                {actionState === 'restart' ? '…' : 'Restart'}
+              </ActionBtn>
+            )}
+            {isOnline && (
+              <ActionBtn onClick={() => setConfirmAction('stop')} disabled={loading} className="bg-red-900/40 text-red-400 border-red-800 active:bg-red-900/80">
+                {actionState === 'stop' ? '…' : 'Stop'}
+              </ActionBtn>
+            )}
+            {isStopped && (
+              <ActionBtn onClick={() => setConfirmAction('start')} disabled={loading} className="bg-emerald-900/40 text-emerald-400 border-emerald-800 active:bg-emerald-900/80">
+                {actionState === 'start' ? '…' : 'Start'}
+              </ActionBtn>
+            )}
+            <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600">
+              History
+            </ActionBtn>
+            <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600 ml-auto">
+              Logs
+            </ActionBtn>
+            {proc.link && (
+              <a
+                href={proc.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border border-indigo-800 bg-indigo-900/40 text-indigo-400 active:bg-indigo-900/80 transition-colors"
+              >
+                Open ↗
+              </a>
+            )}
+          </div>
         )}
       </div>
     </div>
