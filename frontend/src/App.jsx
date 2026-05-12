@@ -66,17 +66,18 @@ export default function App() {
       transports: ['websocket', 'polling'],
       auth: { token },
     });
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('/api/health', { signal: AbortSignal.timeout(4000) });
+        setServerDown(!res.ok);
+      } catch {
+        setServerDown(true);
+      }
+    };
     const startHealthPolling = () => {
       clearInterval(healthPoller.current);
-      healthPoller.current = setInterval(async () => {
-        try {
-          const res = await fetch('/api/health', { signal: AbortSignal.timeout(4000) });
-          if (res.ok) setServerDown(false);
-          else setServerDown(true);
-        } catch {
-          setServerDown(true);
-        }
-      }, 5000);
+      checkHealth(); // immediate — no waiting for first interval
+      healthPoller.current = setInterval(checkHealth, 5000);
     };
     const stopHealthPolling = () => clearInterval(healthPoller.current);
 
