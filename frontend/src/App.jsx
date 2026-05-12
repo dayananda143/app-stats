@@ -110,7 +110,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
           {/* Logo + title */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-sm font-bold shrink-0">A</div>
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
+              </svg>
+            </div>
             <div>
               <h1 className="text-base font-semibold text-white leading-tight">App Stats</h1>
               <p className="text-xs text-slate-400 hidden sm:block">Process Monitor</p>
