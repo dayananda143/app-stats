@@ -440,7 +440,7 @@ app.get('/api/system/ram-processes', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     let memAvailable = 0;
     try { const m = fs.readFileSync('/proc/meminfo', 'utf8').match(/MemAvailable:\s+(\d+)/); if (m) memAvailable = parseInt(m[1]) * 1024; } catch {}
-    const processes = (stdout || '').trim().split('\n').slice(0, 30).map(line => {
+    const processes = (stdout || '').trim().split('\n').map(line => {
       const parts = line.trim().split(/\s+/);
       const pid = parseInt(parts[1]), cpu = parseFloat(parts[2]);
       const rss = parseInt(parts[5]) * 1024, cmd = parts.slice(10).join(' ');
@@ -457,10 +457,12 @@ app.get('/api/system/ram-processes', (req, res) => {
     }).filter(p => p.rss > 0);
     const grouped = {};
     processes.forEach(p => {
-      if (!grouped[p.name]) grouped[p.name] = { name: p.name, rss: 0, cpu: 0, count: 0, pids: [] };
-      grouped[p.name].rss += p.rss; grouped[p.name].cpu += p.cpu; grouped[p.name].count++; grouped[p.name].pids.push(p.pid);
+      if (!grouped[p.name]) grouped[p.name] = { name: p.name, rss: 0, cpu: 0, count: 0, pids: [], items: [] };
+      grouped[p.name].rss += p.rss; grouped[p.name].cpu += p.cpu; grouped[p.name].count++;
+      grouped[p.name].pids.push(p.pid);
+      grouped[p.name].items.push({ pid: p.pid, rss: p.rss, cpu: p.cpu, cmd: p.cmd });
     });
-    res.json({ processes: Object.values(grouped).sort((a, b) => b.rss - a.rss).slice(0, 20), memAvailable });
+    res.json({ processes: Object.values(grouped).sort((a, b) => b.rss - a.rss), memAvailable });
   });
 });
 
@@ -468,6 +470,17 @@ app.post('/api/system/clear-cache', (req, res) => {
   exec('sync && echo 3 | sudo tee /proc/sys/vm/drop_caches', (err, _out, stderr) => {
     if (err) return res.status(500).json({ error: stderr || err.message });
     res.json({ ok: true });
+  });
+});
+
+app.post('/api/system/kill-process', (req, res) => {
+  const { pids } = req.body || {};
+  if (!Array.isArray(pids) || pids.length === 0) return res.status(400).json({ error: 'pids required' });
+  const valid = pids.filter(p => Number.isInteger(p) && p > 0);
+  if (!valid.length) return res.status(400).json({ error: 'Invalid PIDs' });
+  exec(`kill -9 ${valid.join(' ')}`, (err, _out, stderr) => {
+    if (err) return res.status(500).json({ error: stderr || err.message });
+    res.json({ ok: true, killed: valid });
   });
 });
 
