@@ -19,6 +19,8 @@ function detectMemLeak(history) {
   return lastAvg > firstAvg * 1.2 && minRecent > firstAvg * 0.95;
 }
 
+const displayName = (name) => name.replace(/-backend$/, '');
+
 export default function ProcessCard({ proc, actionState, onRestart, onStop, onStart, onLogs, onHistory, token }) {
   const isOnline = proc.status === 'online';
   const isStopped = proc.status === 'stopped' || proc.status === 'errored';
@@ -68,7 +70,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
         <div className="flex-1 min-w-0">
           {/* Name + badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-semibold text-white text-sm truncate max-w-[140px] sm:max-w-none">{proc.name}</h3>
+            <h3 className="font-semibold text-white text-sm truncate max-w-[140px] sm:max-w-none">{displayName(proc.name)}</h3>
             <span className={`text-xs px-1.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
               isOnline
                 ? 'border-emerald-800 bg-emerald-900/40 text-emerald-400'
@@ -185,7 +187,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
               {confirmAction === 'restart' && 'Restart '}
               {confirmAction === 'stop' && 'Stop '}
               {confirmAction === 'start' && 'Start '}
-              <span className="font-semibold text-white">{proc.name}</span>?
+              <span className="font-semibold text-white">{displayName(proc.name)}</span>?
             </span>
             <button
               onClick={() => {

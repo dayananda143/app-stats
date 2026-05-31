@@ -82,13 +82,22 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
         </div>
       </div>
 
-      {/* Secondary stats — always 3 columns, compact cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2 sm:mt-3">
+      {/* Secondary stats — 2 cols on mobile, 4 on sm+ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-2 sm:mt-3">
         <CompactCard label="Network">
           {system.network ? (
             <div className="flex flex-col gap-0.5">
               <span className="text-cyan-400 font-medium">↓ {formatSpeed(system.network.rxBps)}</span>
               <span className="text-violet-400 font-medium">↑ {formatSpeed(system.network.txBps)}</span>
+            </div>
+          ) : <span className="text-slate-500">—</span>}
+        </CompactCard>
+
+        <CompactCard label="Disk I/O">
+          {system.disk_io ? (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-emerald-400 font-medium">R {formatSpeed(system.disk_io.readBps)}</span>
+              <span className="text-amber-400 font-medium">W {formatSpeed(system.disk_io.writeBps)}</span>
             </div>
           ) : <span className="text-slate-500">—</span>}
         </CompactCard>

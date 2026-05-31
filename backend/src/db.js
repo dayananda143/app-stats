@@ -46,6 +46,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_webauthn_username ON webauthn_credentials(username);
 `);
 
+// Migrate: add disk I/O columns (safe — throws if already exists)
+try { db.exec('ALTER TABLE system_history ADD COLUMN disk_read INTEGER'); } catch {}
+try { db.exec('ALTER TABLE system_history ADD COLUMN disk_write INTEGER'); } catch {}
+
 // Prune data older than 25 hours every hour
 setInterval(() => {
   const cutoff = Date.now() - 25 * 60 * 60 * 1000;

@@ -18,6 +18,7 @@ const {
 } = require('@simplewebauthn/server');
 const db = require('./db');
 const { getNetworkIO } = require('./network');
+const { getDiskIO } = require('./disk');
 const settings = require('./settings');
 const { sendTempAlert, sendProcessAlert } = require('./mailer');
 
@@ -538,6 +539,7 @@ async function broadcastStats() {
       pm2List(), si.currentLoad(), si.mem(), cpu_throttle(), nginx_stats(),
     ]);
     const netIO  = getNetworkIO();
+    const diskIO = getDiskIO();
     const now    = Date.now();
     const cfg    = settings.load();
     const [links, notes, portMap] = [loadJSON(LINKS_PATH), loadJSON(NOTES_PATH), await getListeningPorts()];
@@ -580,6 +582,7 @@ async function broadcastStats() {
       uptime: os_uptime(),
       temp, throttle, nginx,
       network: netIO,
+      disk_io: diskIO,
     };
 
     // Temperature alert
@@ -659,8 +662,8 @@ async function broadcastStats() {
       lastHistoryWrite = now;
       const insertProc = db.prepare('INSERT INTO process_history (name, ts, cpu, memory, status) VALUES (?, ?, ?, ?, ?)');
       processes.forEach(p => insertProc.run(p.name, now, p.cpu, p.memory, p.status));
-      db.prepare('INSERT INTO system_history (ts, cpu, mem_used, temp, net_in, net_out) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(now, systemStats.cpu, mem.used, temp, netIO.rxBps, netIO.txBps);
+      db.prepare('INSERT INTO system_history (ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(now, systemStats.cpu, mem.used, temp, netIO.rxBps, netIO.txBps, diskIO.readBps, diskIO.writeBps);
     }
 
     const alertCount = db.prepare('SELECT COUNT(*) as n FROM alerts').get().n;

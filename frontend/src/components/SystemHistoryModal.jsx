@@ -18,13 +18,16 @@ export default function SystemHistoryModal({ token, onClose }) {
   }, [token]);
 
   const tabs = [
-    { key: 'cpu',  label: 'CPU %',    unit: '%',  color: '#3b82f6', getValue: d => d.cpu },
-    { key: 'ram',  label: 'RAM (GB)', unit: 'GB', color: '#8b5cf6', getValue: d => +(d.mem_used / 1024 / 1024 / 1024).toFixed(2) },
-    { key: 'temp', label: 'Temp °C',  unit: '°C', color: '#f97316', getValue: d => d.temp },
+    { key: 'cpu',    label: 'CPU %',      unit: '%',    color: '#3b82f6', getValue: d => d.cpu },
+    { key: 'ram',    label: 'RAM (GB)',   unit: 'GB',   color: '#8b5cf6', getValue: d => +(d.mem_used / 1024 / 1024 / 1024).toFixed(2) },
+    { key: 'temp',   label: 'Temp °C',   unit: '°C',   color: '#f97316', getValue: d => d.temp },
+    { key: 'disk_r', label: 'Disk Read',  unit: 'KB/s', color: '#10b981', getValue: d => d.disk_read  != null ? +(d.disk_read  / 1024).toFixed(1) : null },
+    { key: 'disk_w', label: 'Disk Write', unit: 'KB/s', color: '#f59e0b', getValue: d => d.disk_write != null ? +(d.disk_write / 1024).toFixed(1) : null },
   ];
   const current = tabs.find(t => t.key === tab);
-  const values = data.filter(d => current.getValue(d) !== null).map(current.getValue);
-  const timestamps = data.filter(d => current.getValue(d) !== null).map(d => d.ts);
+  const filtered = data.filter(d => current.getValue(d) != null);
+  const values = filtered.map(current.getValue);
+  const timestamps = filtered.map(d => d.ts);
 
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 1;
