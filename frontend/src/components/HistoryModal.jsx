@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react';
 
+async function downloadExport(url, token) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match ? match[1] : 'export';
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
 export default function HistoryModal({ name, token, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +59,18 @@ export default function HistoryModal({ name, token, onClose }) {
                 </button>
               ))}
             </div>
+            {!loading && data.length > 0 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => downloadExport(`/api/export/process/${encodeURIComponent(name)}?format=csv`, token)}
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                >CSV</button>
+                <button
+                  onClick={() => downloadExport(`/api/export/process/${encodeURIComponent(name)}?format=json`, token)}
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                >JSON</button>
+              </div>
+            )}
             <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
           </div>
         </div>

@@ -6,7 +6,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const pm2 = require('pm2');
 const si = require('systeminformation');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -21,6 +21,7 @@ const { getNetworkIO } = require('./network');
 const { getDiskIO } = require('./disk');
 const settings = require('./settings');
 const { sendTempAlert, sendProcessAlert } = require('./mailer');
+const { sendTelegramTempAlert, sendTelegramProcessAlert, sendTelegramWithChatId } = require('./telegram');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
@@ -337,6 +338,18 @@ app.put('/api/settings', (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ─── Telegram test ───────────────────────────────────────────────────────────
+app.post('/api/telegram/test', requireAuth, async (req, res) => {
+  const { chatId } = req.body;
+  if (!chatId) return res.status(400).json({ error: 'chatId required' });
+  try {
+    await sendTelegramWithChatId(chatId, '✅ <b>App Stats</b> — Telegram notifications are working!');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Alerts history ──────────────────────────────────────────────────────────
 app.get('/api/alerts', (req, res) => {
   const limit = parseInt(req.query.limit) || 100;
@@ -416,8 +429,47 @@ app.get('/api/processes/:name/history', (req, res) => {
 // 24h system history
 app.get('/api/system/history', (req, res) => {
   const since = Date.now() - 24 * 60 * 60 * 1000;
-  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
+  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
   res.json(rows);
+});
+
+// Export system history as CSV or JSON download
+app.get('/api/export/system', (req, res) => {
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
+  const fmt = req.query.format === 'csv' ? 'csv' : 'json';
+  const date = new Date().toISOString().slice(0, 10);
+  if (fmt === 'csv') {
+    const header = 'timestamp,datetime,cpu_percent,memory_bytes,temp_celsius,net_in_bps,net_out_bps,disk_read_bps,disk_write_bps';
+    const body = rows.map(r =>
+      `${r.ts},${new Date(r.ts).toISOString()},${r.cpu},${r.mem_used},${r.temp ?? ''},${r.net_in ?? ''},${r.net_out ?? ''},${r.disk_read ?? ''},${r.disk_write ?? ''}`
+    ).join('\n');
+    res.setHeader('Content-Disposition', `attachment; filename="system-history-${date}.csv"`);
+    res.setHeader('Content-Type', 'text/csv');
+    return res.send(header + '\n' + body);
+  }
+  res.setHeader('Content-Disposition', `attachment; filename="system-history-${date}.json"`);
+  res.json(rows.map(r => ({ ...r, datetime: new Date(r.ts).toISOString() })));
+});
+
+// Export process history as CSV or JSON download
+app.get('/api/export/process/:name', (req, res) => {
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const rows = db.prepare('SELECT ts, cpu, memory, status FROM process_history WHERE name = ? AND ts > ? ORDER BY ts ASC').all(req.params.name, since);
+  const fmt = req.query.format === 'csv' ? 'csv' : 'json';
+  const date = new Date().toISOString().slice(0, 10);
+  const name = req.params.name;
+  if (fmt === 'csv') {
+    const header = 'timestamp,datetime,cpu_percent,memory_bytes,status';
+    const body = rows.map(r =>
+      `${r.ts},${new Date(r.ts).toISOString()},${r.cpu},${r.memory},${r.status}`
+    ).join('\n');
+    res.setHeader('Content-Disposition', `attachment; filename="${name}-history-${date}.csv"`);
+    res.setHeader('Content-Type', 'text/csv');
+    return res.send(header + '\n' + body);
+  }
+  res.setHeader('Content-Disposition', `attachment; filename="${name}-history-${date}.json"`);
+  res.json(rows.map(r => ({ ...r, datetime: new Date(r.ts).toISOString() })));
 });
 
 // ─── System ───────────────────────────────────────────────────────────────────
@@ -496,6 +548,147 @@ app.get('/api/disk/breakdown', (req, res) => {
   });
 });
 
+// ─── Hardware ─────────────────────────────────────────────────────────────────
+const MANF_IDS = {
+  '0x000001': 'Panasonic', '0x000002': 'Toshiba', '0x000003': 'SanDisk',
+  '0x000006': 'Ritek', '0x000018': 'Infineon', '0x00001b': 'Samsung',
+  '0x00001d': 'AData', '0x000028': 'Lexar', '0x000041': 'Kingston',
+  '0x000074': 'Transcend', '0x000082': 'Sony',
+};
+
+function readSys(p) { try { return fs.readFileSync(p, 'utf8').trim(); } catch { return null; } }
+
+app.get('/api/hardware/sd', (req, res) => {
+  try {
+    const name   = readSys('/sys/block/mmcblk0/device/name');
+    const manfid = readSys('/sys/block/mmcblk0/device/manfid');
+    const raw    = readSys('/sys/block/mmcblk0/stat');
+    if (!name || !raw) return res.json(null);
+    const s = raw.split(/\s+/).map(Number);
+    // columns: read_ios, read_merges, read_sectors, read_ticks, write_ios, write_merges, write_sectors, ...
+    res.json({
+      name,
+      manufacturer: manfid ? (MANF_IDS[manfid] || `ID ${manfid}`) : null,
+      gbRead:    +(s[2]  * 512 / 1e9).toFixed(1),
+      gbWritten: +(s[6]  * 512 / 1e9).toFixed(1),
+      readOps:   s[0],
+      writeOps:  s[4],
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/hardware/cpu-freq', (req, res) => {
+  const curKhz = parseInt(readSys('/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq'));
+  const maxKhz = parseInt(readSys('/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq'));
+  const minKhz = parseInt(readSys('/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq'));
+  const governor = readSys('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor');
+  res.json({
+    currentMhz: isNaN(curKhz) ? null : Math.round(curKhz / 1000),
+    maxMhz:     isNaN(maxKhz) ? null : Math.round(maxKhz / 1000),
+    minMhz:     isNaN(minKhz) ? null : Math.round(minKhz / 1000),
+    governor,
+    atMax: !isNaN(curKhz) && !isNaN(maxKhz) ? curKhz >= maxKhz * 0.99 : null,
+  });
+});
+
+app.get('/api/hardware/gpio', (req, res) => {
+  exec('raspi-gpio get 2>/dev/null', { timeout: 5000 }, (err, stdout) => {
+    if (err || !stdout) return res.json({ pins: [] });
+    const pins = [];
+    for (const line of stdout.split('\n')) {
+      const m = line.match(/GPIO\s+(\d+):\s+level=(\d+)\s+fsel=\d+\s+func=(\S+)(?:\s+pull=(\S+))?/);
+      if (m) pins.push({ gpio: parseInt(m[1]), level: parseInt(m[2]), func: m[3], pull: m[4] || null });
+    }
+    res.json({ pins });
+  });
+});
+
+app.get('/api/hardware/usb', (req, res) => {
+  exec('lsusb 2>/dev/null', { timeout: 5000 }, (err, stdout) => {
+    if (err || !stdout) return res.json({ devices: [] });
+    const devices = stdout.trim().split('\n').filter(Boolean).map(line => {
+      const m = line.match(/Bus\s+(\d+)\s+Device\s+(\d+):\s+ID\s+([0-9a-f:]+)\s+(.*)/i);
+      return m ? { bus: m[1], device: m[2], id: m[3], name: m[4].trim() } : null;
+    }).filter(Boolean);
+    res.json({ devices });
+  });
+});
+
+let updatesCache = null, updatesCachedAt = 0;
+let installInProgress = false;
+
+app.get('/api/system/updates', (req, res) => {
+  if (updatesCache && Date.now() - updatesCachedAt < 10 * 60 * 1000) return res.json(updatesCache);
+  exec('apt list --upgradable 2>/dev/null', { timeout: 30000 }, (_err, stdout) => {
+    const packages = (stdout || '').trim().split('\n')
+      .filter(l => l.includes('[upgradable'))
+      .map(l => {
+        const m = l.match(/^([^/]+)\/(\S+)\s+(\S+)\s+(\S+)\s+\[upgradable/);
+        return m ? { name: m[1], suite: m[2], version: m[3], arch: m[4] } : null;
+      }).filter(Boolean);
+    const security = packages.filter(p => p.suite.includes('security')).length;
+    updatesCache = { count: packages.length, security, packages, cachedAt: Date.now() };
+    updatesCachedAt = Date.now();
+    res.json(updatesCache);
+  });
+});
+
+// Stream apt-get install output
+app.post('/api/system/updates/install', (req, res) => {
+  if (installInProgress) return res.status(409).json({ error: 'An installation is already running' });
+  const { packages } = req.body || {};
+  if (!Array.isArray(packages) || packages.length === 0) return res.status(400).json({ error: 'No packages specified' });
+
+  // Whitelist: valid Debian package name chars only
+  const safe = packages.map(p => p.replace(/[^a-z0-9_.+:-]/gi, '').slice(0, 80)).filter(Boolean);
+  if (!safe.length) return res.status(400).json({ error: 'Invalid package names' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  installInProgress = true;
+  const send = obj => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch {} };
+
+  const child = spawn('sudo', ['apt-get', 'install', '-y', ...safe], {
+    env: { ...process.env, DEBIAN_FRONTEND: 'noninteractive' },
+  });
+
+  child.stdout.on('data', d => send({ line: d.toString() }));
+  child.stderr.on('data', d => send({ line: d.toString(), isErr: true }));
+  child.on('error', err => {
+    installInProgress = false;
+    send({ line: `spawn error: ${err.message}\n`, isErr: true });
+    send({ done: true, code: 1 });
+    res.end();
+  });
+  child.on('close', code => {
+    const finish = () => {
+      installInProgress = false;
+      updatesCache = null;
+      updatesCachedAt = 0;
+      send({ done: true, code });
+      res.end();
+    };
+    if (code !== 0) return finish();
+    // Verify what dpkg actually recorded for the installed packages
+    const vCmd = "dpkg-query -W -f='${Package}\\t${Version}\\t${db:Status-Status}\\n' " + safe.join(' ');
+    exec(vCmd, { timeout: 5000 }, (_, vOut) => {
+      send({ line: '\n─── Installed versions ───\n' });
+      (vOut || '').trim().split('\n').filter(Boolean).forEach(line => {
+        const [pkg, ver, status] = line.split('\t');
+        send({ line: `✓  ${pkg}  →  ${ver}  (${status || 'installed'})\n` });
+      });
+      finish();
+    });
+  });
+
+  // If client disconnects mid-install, let apt finish — don't kill it.
+  // Just mark the response as gone so send() calls are silently swallowed.
+  req.on('close', () => { /* intentionally no-op: apt must be allowed to complete */ });
+});
+
 // ─── PM2 internals ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3006;
 const MAX_HISTORY = 60;
@@ -567,6 +760,10 @@ async function broadcastStats() {
         const isRecovery = curr === 'online' && (prev === 'stopped' || prev === 'errored');
         if (cfg.processAlerts && (isCrash || isRecovery)) {
           sendProcessAlert(p.name, curr, fmt.link).catch(e => console.error('[mailer]', e.message));
+          if (cfg.telegramEnabled && cfg.telegramChatId) {
+            process.env.TELEGRAM_CHAT_ID = cfg.telegramChatId;
+            sendTelegramProcessAlert(p.name, curr, fmt.link).catch(e => console.error('[telegram]', e.message));
+          }
           logAlert(isCrash ? 'crash' : 'recovery', `${p.name} ${isCrash ? 'crashed' : 'recovered'}`, `Status: ${prev} → ${curr}`);
         }
       }
@@ -592,10 +789,18 @@ async function broadcastStats() {
       if (temp >= cfg.tempThreshold && tempAlertState === 'normal' && alertNow - lastTempAlertAt > cooldownMs) {
         tempAlertState = 'hot'; lastTempAlertAt = alertNow;
         sendTempAlert(temp, 'hot').catch(e => console.error('[mailer]', e.message));
+        if (cfg.telegramEnabled && cfg.telegramChatId) {
+          process.env.TELEGRAM_CHAT_ID = cfg.telegramChatId;
+          sendTelegramTempAlert(temp, 'hot').catch(e => console.error('[telegram]', e.message));
+        }
         logAlert('temp_high', `CPU temperature ${temp}°C`, `Threshold: ${cfg.tempThreshold}°C`);
       } else if (temp <= cfg.tempRecovery && tempAlertState === 'hot') {
         tempAlertState = 'normal'; lastTempAlertAt = alertNow;
         sendTempAlert(temp, 'recovered').catch(e => console.error('[mailer]', e.message));
+        if (cfg.telegramEnabled && cfg.telegramChatId) {
+          process.env.TELEGRAM_CHAT_ID = cfg.telegramChatId;
+          sendTelegramTempAlert(temp, 'recovered').catch(e => console.error('[telegram]', e.message));
+        }
         logAlert('temp_ok', `CPU temperature recovered ${temp}°C`, null);
       }
     }

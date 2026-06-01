@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function SettingsModal({ token, onClose }) {
   const [form, setForm] = useState(null);
@@ -7,6 +7,8 @@ export default function SettingsModal({ token, onClose }) {
   const [error, setError] = useState('');
   const [faceIdRegistered, setFaceIdRegistered] = useState(false);
   const [removingFaceId, setRemovingFaceId] = useState(false);
+  const [telegramTesting, setTelegramTesting] = useState(false);
+  const [telegramTestResult, setTelegramTestResult] = useState(null);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -138,6 +140,57 @@ export default function SettingsModal({ token, onClose }) {
                     <NumberInput value={form.sysRamAlertPercent} onChange={v => update('sysRamAlertPercent', v)} min={50} max={99} />
                     <Toggle value={form.sysRamAlertEnabled} onChange={v => update('sysRamAlertEnabled', v)} />
                   </div>
+                </Field>
+              </Section>
+
+              <Section title="Telegram Notifications">
+                <div className="text-xs text-slate-500 mb-3 leading-relaxed">
+                  Set <code className="text-slate-300 bg-slate-800 px-1 rounded">TELEGRAM_BOT_TOKEN</code> in <code className="text-slate-300 bg-slate-800 px-1 rounded">.env</code> via{' '}
+                  <span className="text-slate-400">@BotFather</span>. Get your Chat ID from{' '}
+                  <span className="text-slate-400">@userinfobot</span>.
+                </div>
+                <Field label="Enable Telegram alerts">
+                  <Toggle value={form.telegramEnabled || false} onChange={v => update('telegramEnabled', v)} />
+                </Field>
+                <Field label="Chat ID" hint="Your Telegram user or group chat ID">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={form.telegramChatId || ''}
+                      onChange={e => update('telegramChatId', e.target.value)}
+                      placeholder="e.g. 123456789"
+                      className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!form.telegramChatId) return;
+                        setTelegramTesting(true);
+                        setTelegramTestResult(null);
+                        try {
+                          const res = await fetch('/api/telegram/test', {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chatId: form.telegramChatId }),
+                          });
+                          const data = await res.json();
+                          setTelegramTestResult(data.ok ? 'ok' : data.error || 'error');
+                        } catch {
+                          setTelegramTestResult('error');
+                        }
+                        setTelegramTesting(false);
+                        setTimeout(() => setTelegramTestResult(null), 4000);
+                      }}
+                      disabled={telegramTesting || !form.telegramChatId}
+                      className="px-3 py-2 text-xs rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 transition-colors shrink-0"
+                    >
+                      {telegramTesting ? '…' : 'Test'}
+                    </button>
+                  </div>
+                  {telegramTestResult && (
+                    <div className={`text-xs mt-1.5 ${telegramTestResult === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {telegramTestResult === 'ok' ? '✓ Message sent! Check your Telegram.' : `✗ ${telegramTestResult}`}
+                    </div>
+                  )}
                 </Field>
               </Section>
 

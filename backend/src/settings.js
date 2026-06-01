@@ -18,6 +18,8 @@ const DEFAULTS = {
   stuckAlertEnabled: true,
   stuckCpuThreshold: 85,
   stuckMinutes: 5,
+  telegramEnabled: false,
+  telegramChatId: '',
 };
 
 function load() {

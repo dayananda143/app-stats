@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react';
 
+async function downloadExport(url, token) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match ? match[1] : 'export';
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
 export default function SystemHistoryModal({ token, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +33,13 @@ export default function SystemHistoryModal({ token, onClose }) {
   }, [token]);
 
   const tabs = [
-    { key: 'cpu',    label: 'CPU %',      unit: '%',    color: '#3b82f6', getValue: d => d.cpu },
-    { key: 'ram',    label: 'RAM (GB)',   unit: 'GB',   color: '#8b5cf6', getValue: d => +(d.mem_used / 1024 / 1024 / 1024).toFixed(2) },
-    { key: 'temp',   label: 'Temp °C',   unit: '°C',   color: '#f97316', getValue: d => d.temp },
-    { key: 'disk_r', label: 'Disk Read',  unit: 'KB/s', color: '#10b981', getValue: d => d.disk_read  != null ? +(d.disk_read  / 1024).toFixed(1) : null },
-    { key: 'disk_w', label: 'Disk Write', unit: 'KB/s', color: '#f59e0b', getValue: d => d.disk_write != null ? +(d.disk_write / 1024).toFixed(1) : null },
+    { key: 'cpu',     label: 'CPU %',      unit: '%',    color: '#3b82f6', getValue: d => d.cpu },
+    { key: 'ram',     label: 'RAM (GB)',    unit: 'GB',   color: '#8b5cf6', getValue: d => +(d.mem_used / 1024 / 1024 / 1024).toFixed(2) },
+    { key: 'temp',    label: 'Temp °C',    unit: '°C',   color: '#f97316', getValue: d => d.temp },
+    { key: 'net_in',  label: 'Net In',     unit: 'KB/s', color: '#06b6d4', getValue: d => d.net_in  != null ? +(d.net_in  / 1024).toFixed(1) : null },
+    { key: 'net_out', label: 'Net Out',    unit: 'KB/s', color: '#ec4899', getValue: d => d.net_out != null ? +(d.net_out / 1024).toFixed(1) : null },
+    { key: 'disk_r',  label: 'Disk Read',  unit: 'KB/s', color: '#10b981', getValue: d => d.disk_read  != null ? +(d.disk_read  / 1024).toFixed(1) : null },
+    { key: 'disk_w',  label: 'Disk Write', unit: 'KB/s', color: '#f59e0b', getValue: d => d.disk_write != null ? +(d.disk_write / 1024).toFixed(1) : null },
   ];
   const current = tabs.find(t => t.key === tab);
   const filtered = data.filter(d => current.getValue(d) != null);
@@ -41,15 +58,30 @@ export default function SystemHistoryModal({ token, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <h2 className="font-semibold text-white">System History <span className="text-slate-500 font-normal text-sm">24h</span></h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
+          <div className="flex items-center gap-2">
+            {!loading && data.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-500">Export:</span>
+                <button
+                  onClick={() => downloadExport('/api/export/system?format=csv', token)}
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                >CSV</button>
+                <button
+                  onClick={() => downloadExport('/api/export/system?format=json', token)}
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                >JSON</button>
+              </div>
+            )}
+            <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
-          {/* Tab buttons */}
-          <div className="flex gap-2">
+          {/* Tab buttons — scrollable on mobile */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-700 text-slate-400 hover:text-white'}`}>
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-700 text-slate-400 hover:text-white'}`}>
                 {t.label}
               </button>
             ))}
@@ -80,7 +112,10 @@ export default function SystemHistoryModal({ token, onClose }) {
 
               {/* Chart */}
               <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
-                <TimeSeriesChart data={values} timestamps={timestamps} color={current.color} unit={current.unit} min={min} max={max} />
+                {filtered.length < 2
+                  ? <div className="text-slate-500 text-center py-8 text-sm">Not enough data for this metric yet.</div>
+                  : <TimeSeriesChart data={values} timestamps={timestamps} color={current.color} unit={current.unit} min={min} max={max} />
+                }
               </div>
             </>
           )}
