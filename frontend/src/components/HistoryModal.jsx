@@ -41,19 +41,19 @@ export default function HistoryModal({ name, token, onClose }) {
       className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl flex flex-col max-h-[80vh]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="bg-gray-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-2xl flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <h2 className="font-semibold text-white">{name}</h2>
-            <span className="text-xs text-slate-400">24h history</span>
+            <h2 className="font-semibold text-slate-900 dark:text-white">{name}</h2>
+            <span className="text-xs text-slate-600 dark:text-slate-400">24h history</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg overflow-hidden border border-slate-700 text-xs">
+            <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-xs">
               {[['cpu', 'CPU %'], ['mem', 'Memory']].map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setTab(key)}
-                  className={`px-3 py-1 ${tab === key ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1 ${tab === key ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   {label}
                 </button>
@@ -63,23 +63,23 @@ export default function HistoryModal({ name, token, onClose }) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => downloadExport(`/api/export/process/${encodeURIComponent(name)}?format=csv`, token)}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
                 >CSV</button>
                 <button
                   onClick={() => downloadExport(`/api/export/process/${encodeURIComponent(name)}?format=json`, token)}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
                 >JSON</button>
               </div>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
+            <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none px-1">×</button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
           {loading ? (
-            <div className="text-slate-400 text-center py-10">Loading…</div>
+            <div className="text-slate-600 dark:text-slate-400 text-center py-10">Loading…</div>
           ) : data.length < 2 ? (
-            <div className="text-slate-500 text-center py-10 text-sm">
+            <div className="text-slate-500 dark:text-slate-500 text-center py-10 text-sm">
               Not enough data yet.<br />Check back in a few minutes.
             </div>
           ) : (
@@ -111,9 +111,9 @@ function StatsSummary({ values, formatter }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {[['Min', min], ['Avg', avg], ['Max', max]].map(([label, val]) => (
-        <div key={label} className="bg-slate-800 rounded-lg p-3 text-center border border-slate-700">
-          <div className="text-xs text-slate-400">{label}</div>
-          <div className="text-sm font-semibold text-white mt-0.5">{formatter(val)}</div>
+        <div key={label} className="bg-white dark:bg-slate-800 rounded-lg p-3 text-center border border-slate-200 dark:border-slate-700">
+          <div className="text-xs text-slate-600 dark:text-slate-400">{label}</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{formatter(val)}</div>
         </div>
       ))}
     </div>
@@ -151,7 +151,7 @@ function TimeSeriesChart({ data, getY, color, yFormatter, maxY: forcedMaxY }) {
   }));
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-slate-950/40" style={{ height: `${H}px` }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-slate-200/40 dark:bg-slate-950/40" style={{ height: `${H}px` }}>
       {yTicks.map((tick, i) => (
         <g key={i}>
           <line x1={PAD.left} y1={tick.y} x2={W - PAD.right} y2={tick.y} stroke="#1e293b" strokeWidth="1" />

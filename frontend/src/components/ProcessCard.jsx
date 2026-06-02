@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 const STATUS_COLORS = {
   online: 'bg-emerald-400',
-  stopped: 'bg-slate-500',
+  stopped: 'bg-slate-300 dark:bg-slate-500',
   stopping: 'bg-yellow-400',
   launching: 'bg-blue-400',
   errored: 'bg-red-400',
@@ -63,24 +63,24 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   };
 
   return (
-    <div className={`bg-slate-800 rounded-xl border p-3 sm:p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-700' : 'border-slate-700'}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-700' : 'border-slate-200 dark:border-slate-700'}`}>
 
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           {/* Name + badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-semibold text-white text-sm truncate max-w-[140px] sm:max-w-none">{displayName(proc.name)}</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm truncate max-w-[140px] sm:max-w-none">{displayName(proc.name)}</h3>
             <span className={`text-xs px-1.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
               isOnline
                 ? 'border-emerald-800 bg-emerald-900/40 text-emerald-400'
-                : 'border-slate-600 bg-slate-700 text-slate-400'
+                : 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_COLORS[proc.status] || 'bg-slate-400'}`} />
               {proc.status}
             </span>
             {proc.port && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full border border-slate-600 bg-slate-700/50 text-slate-400 shrink-0">
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 shrink-0">
                 :{proc.port}
               </span>
             )}
@@ -97,7 +97,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
           </div>
 
           {/* Meta */}
-          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-500">
             <span>PID {proc.pid || '—'}</span>
             <span>#{proc.pmId}</span>
           </div>
@@ -118,13 +118,13 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
 
         {/* Right: restarts + uptime + collapse */}
         <div className="flex items-start gap-2 shrink-0">
-          <div className="text-xs text-slate-500 text-right">
+          <div className="text-xs text-slate-500 dark:text-slate-500 text-right">
             <div>{proc.restarts}↺</div>
             {isOnline && proc.uptime && (
-              <div className="text-slate-400">{formatUptime(Date.now() - proc.uptime)}</div>
+              <div className="text-slate-600 dark:text-slate-400">{formatUptime(Date.now() - proc.uptime)}</div>
             )}
           </div>
-          <button onClick={toggleCollapsed} className="text-slate-500 hover:text-slate-300 transition-colors mt-0.5">
+          <button onClick={toggleCollapsed} className="text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors mt-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -163,7 +163,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             onKeyDown={e => e.key === 'Escape' && (setEditingNote(false), setNote(proc.note || ''))}
             placeholder="Add a note…"
             rows={2}
-            className="w-full bg-slate-900 border border-indigo-700 rounded-lg px-2 py-1.5 text-slate-300 placeholder-slate-600 focus:outline-none resize-none text-xs"
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-indigo-700 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-300 placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none resize-none text-xs"
             autoFocus
           />
         ) : (
@@ -171,8 +171,8 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             className="flex items-start gap-1.5 cursor-pointer min-h-[28px] py-1"
             onClick={() => setEditingNote(true)}
           >
-            <span className="text-slate-600 mt-0.5">✎</span>
-            <span className={note ? 'text-slate-400' : 'text-slate-600 italic'}>
+            <span className="text-slate-500 dark:text-slate-600 mt-0.5">✎</span>
+            <span className={note ? 'text-slate-600 dark:text-slate-400' : 'text-slate-500 dark:text-slate-600 italic'}>
               {savingNote ? 'Saving…' : note || 'Add note…'}
             </span>
           </div>
@@ -180,14 +180,14 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
       </div>}
 
       {/* Actions */}
-      <div className="pt-1 border-t border-slate-700">
+      <div className="pt-1 border-t border-slate-200 dark:border-slate-700">
         {confirmAction ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-300 flex-1">
+            <span className="text-xs text-slate-700 dark:text-slate-300 flex-1">
               {confirmAction === 'restart' && 'Restart '}
               {confirmAction === 'stop' && 'Stop '}
               {confirmAction === 'start' && 'Start '}
-              <span className="font-semibold text-white">{displayName(proc.name)}</span>?
+              <span className="font-semibold text-slate-900 dark:text-white">{displayName(proc.name)}</span>?
             </span>
             <button
               onClick={() => {
@@ -196,13 +196,13 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
                 else if (confirmAction === 'stop') onStop();
                 else if (confirmAction === 'start') onStart();
               }}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white transition-colors"
             >
               Confirm
             </button>
             <button
               onClick={() => setConfirmAction(null)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
             >
               Cancel
             </button>
@@ -224,10 +224,10 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
                 {actionState === 'start' ? '…' : 'Start'}
               </ActionBtn>
             )}
-            <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600">
+            <ActionBtn onClick={onHistory} disabled={loading} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600">
               History
             </ActionBtn>
-            <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-700 text-slate-300 border-slate-600 ml-auto">
+            <ActionBtn onClick={onLogs} disabled={loading} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 ml-auto">
               Logs
             </ActionBtn>
             {proc.link && (
@@ -250,12 +250,12 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
 function StatBlock({ label, value, percent, color, history, sparkColor, active }) {
   const clampedPercent = Math.min(Math.max(percent, 0), 100);
   return (
-    <div className="bg-slate-900/50 rounded-lg p-2.5">
+    <div className="bg-slate-100/50 dark:bg-slate-900/50 rounded-lg p-2.5">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-500">{label}</span>
-        <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-500'}`}>{value}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-500">{label}</span>
+        <span className={`text-xs font-medium ${active ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-500'}`}>{value}</span>
       </div>
-      <div className="h-1 bg-slate-700 rounded-full mb-2">
+      <div className="h-1 bg-slate-100 dark:bg-slate-700 rounded-full mb-2">
         <div className={`h-1 rounded-full transition-all duration-500 ${color}`} style={{ width: `${clampedPercent}%` }} />
       </div>
       {/* Responsive sparkline — fills full width */}

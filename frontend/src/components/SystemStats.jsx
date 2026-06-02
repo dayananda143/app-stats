@@ -23,9 +23,9 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">System</h2>
+        <h2 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">System</h2>
         <div className="flex items-center gap-2">
-          <button onClick={onHistoryClick} className="text-xs px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white transition-colors">
+          <button onClick={onHistoryClick} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
             History
           </button>
           <button
@@ -34,7 +34,7 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
             className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
               cleared
                 ? 'border-emerald-700 bg-emerald-900/30 text-emerald-400'
-                : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white'
+                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {clearing ? 'Clearing…' : cleared ? '✓ Cleared' : 'Clear Cache'}
@@ -73,12 +73,12 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
         )}
         <TempCard temp={system.temp} />
         {/* Uptime: full-width on mobile (col-span-2) so it doesn't sit orphaned */}
-        <div className="col-span-2 sm:col-span-1 bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-4 flex sm:block items-center gap-4">
+        <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 flex sm:block items-center gap-4">
           <div>
-            <div className="text-xs text-slate-400 mb-1">Uptime</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Uptime</div>
             <div className="text-sm font-semibold text-cyan-400">{formatUptime(system.uptime)}</div>
           </div>
-          <div className="text-xs text-slate-500">{system.hostname || ''}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-500">{system.hostname || ''}</div>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
               <span className="text-cyan-400 font-medium">↓ {formatSpeed(system.network.rxBps)}</span>
               <span className="text-violet-400 font-medium">↑ {formatSpeed(system.network.txBps)}</span>
             </div>
-          ) : <span className="text-slate-500">—</span>}
+          ) : <span className="text-slate-500 dark:text-slate-500">—</span>}
         </CompactCard>
 
         <CompactCard label="Disk I/O">
@@ -99,16 +99,16 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
               <span className="text-emerald-400 font-medium">R {formatSpeed(system.disk_io.readBps)}</span>
               <span className="text-amber-400 font-medium">W {formatSpeed(system.disk_io.writeBps)}</span>
             </div>
-          ) : <span className="text-slate-500">—</span>}
+          ) : <span className="text-slate-500 dark:text-slate-500">—</span>}
         </CompactCard>
 
         <CompactCard label="nginx">
           {system.nginx ? (
             <div className="flex flex-col gap-0.5">
               <span className="text-emerald-400 font-medium">{system.nginx.active} conn</span>
-              <span className="text-slate-500 text-xs">R:{system.nginx.reading} W:{system.nginx.writing}</span>
+              <span className="text-slate-500 dark:text-slate-500 text-xs">R:{system.nginx.reading} W:{system.nginx.writing}</span>
             </div>
-          ) : <span className="text-slate-500">—</span>}
+          ) : <span className="text-slate-500 dark:text-slate-500">—</span>}
         </CompactCard>
 
         <CompactCard label="Pi">
@@ -116,7 +116,7 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
             <span className={`font-medium ${system.throttle.ok ? 'text-emerald-400' : 'text-orange-400'}`}>
               {system.throttle.ok ? '✓ OK' : '⚠ Warn'}
             </span>
-          ) : <span className="text-slate-500">—</span>}
+          ) : <span className="text-slate-500 dark:text-slate-500">—</span>}
         </CompactCard>
       </div>
     </div>
@@ -125,8 +125,8 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
 
 function CompactCard({ label, children }) {
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 p-2 sm:p-3">
-      <div className="text-xs text-slate-400 mb-1.5">{label}</div>
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-2 sm:p-3">
+      <div className="text-xs text-slate-600 dark:text-slate-400 mb-1.5">{label}</div>
       <div className="text-xs">{children}</div>
     </div>
   );
@@ -136,16 +136,16 @@ function GaugeCard({ label, value, subValue, percent, color, textColor, onClick,
   const clamp = Math.min(Math.max(percent || 0, 0), 100);
   return (
     <div
-      className={`bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-4 transition-colors ${clickable ? 'cursor-pointer active:bg-slate-750 hover:border-violet-500' : ''}`}
+      className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 transition-colors ${clickable ? 'cursor-pointer active:bg-slate-200 dark:active:bg-slate-750 hover:border-violet-500' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400">{label}</span>
-        {clickable && <span className="text-xs text-slate-500">↗</span>}
+        <span className="text-xs text-slate-600 dark:text-slate-400">{label}</span>
+        {clickable && <span className="text-xs text-slate-500 dark:text-slate-500">↗</span>}
       </div>
       <div className={`text-sm font-semibold ${textColor} mb-1.5 sm:mb-2`}>{subValue || value}</div>
-      {subValue && <div className="text-xs text-slate-500 mb-1.5 hidden sm:block">{value}</div>}
-      <div className="h-1.5 bg-slate-700 rounded-full">
+      {subValue && <div className="text-xs text-slate-500 dark:text-slate-500 mb-1.5 hidden sm:block">{value}</div>}
+      <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
         <div className={`h-1.5 rounded-full transition-all duration-700 ${color}`} style={{ width: `${clamp}%` }} />
       </div>
     </div>
@@ -153,12 +153,12 @@ function GaugeCard({ label, value, subValue, percent, color, textColor, onClick,
 }
 
 function TempCard({ temp }) {
-  const color = temp === null ? 'text-slate-500'
+  const color = temp === null ? 'text-slate-500 dark:text-slate-500'
     : temp >= 80 ? 'text-red-400'
     : temp >= 70 ? 'text-orange-400'
     : temp >= 60 ? 'text-yellow-400'
     : 'text-emerald-400';
-  const barColor = temp === null ? 'bg-slate-600'
+  const barColor = temp === null ? 'bg-slate-200 dark:bg-slate-600'
     : temp >= 80 ? 'bg-red-500'
     : temp >= 70 ? 'bg-orange-500'
     : temp >= 60 ? 'bg-yellow-500'
@@ -166,15 +166,15 @@ function TempCard({ temp }) {
   const warning = temp !== null && temp >= 80;
   const pct = temp !== null ? Math.min((temp / 100) * 100, 100) : 0;
   return (
-    <div className={`bg-slate-800 rounded-xl border p-3 sm:p-4 transition-colors ${warning ? 'border-red-700' : 'border-slate-700'}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 transition-colors ${warning ? 'border-red-700' : 'border-slate-200 dark:border-slate-700'}`}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400">Temp</span>
+        <span className="text-xs text-slate-600 dark:text-slate-400">Temp</span>
         {warning && <span className="text-xs text-red-400 animate-pulse">HOT</span>}
       </div>
       <div className={`text-sm font-semibold ${color} mb-1.5 sm:mb-2`}>
         {temp !== null ? `${temp}°C` : '—'}
       </div>
-      <div className="h-1.5 bg-slate-700 rounded-full">
+      <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
         <div className={`h-1.5 rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
     </div>

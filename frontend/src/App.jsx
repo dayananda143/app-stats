@@ -43,7 +43,13 @@ export default function App() {
   const [alertCount, setAlertCount] = useState(0);
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('sort-by') || 'name');
   const [sortDir, setSortDir] = useState(() => localStorage.getItem('sort-dir') || 'asc');
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') !== 'light');
   const prevStatuses = useRef({});
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, [dark]);
 
   const unreadAlerts = Math.max(0, alertCount - parseInt(localStorage.getItem('alerts-seen-count') || '0'));
 
@@ -147,20 +153,20 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
       {/* Header — safe area top for iPhone notch */}
-      <div className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+      <div className="border-b border-slate-100 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
           {/* Logo + title */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-base font-semibold text-white leading-tight">App Stats</h1>
-              <p className="text-xs text-slate-400 hidden sm:block">Process Monitor</p>
+              <h1 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">App Stats</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400 hidden sm:block">Process Monitor</p>
             </div>
           </div>
 
@@ -169,7 +175,7 @@ export default function App() {
             {/* Live indicator */}
             <div className="flex items-center gap-1.5 mr-1">
               <span className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              <span className="text-xs text-slate-400 hidden sm:block">{connected ? 'Live' : 'Off'}</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 hidden sm:block">{connected ? 'Live' : 'Off'}</span>
             </div>
 
             {/* Alerts with unread badge */}
@@ -179,11 +185,24 @@ export default function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {unreadAlerts > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5 leading-none">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 rounded-full text-slate-900 dark:text-white text-[10px] font-bold flex items-center justify-center px-0.5 leading-none">
                     {unreadAlerts > 99 ? '99+' : unreadAlerts}
                   </span>
                 )}
               </div>
+            </IconBtn>
+
+            {/* Theme toggle */}
+            <IconBtn onClick={() => setDark(d => !d)} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+              {dark ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
             </IconBtn>
 
             {/* Settings */}
@@ -228,13 +247,13 @@ export default function App() {
         {/* Process grid */}
         <div>
           <div className="flex items-center justify-between mb-3 gap-2">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Processes <span className="text-slate-600 font-normal normal-case tracking-normal">({processes.length})</span>
+            <h2 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              Processes <span className="text-slate-500 dark:text-slate-600 font-normal normal-case tracking-normal">({processes.length})</span>
             </h2>
             <div className="flex items-center gap-1">
               {['name','status','cpu','memory'].map(f => (
                 <button key={f} onClick={() => cycleSort(f)}
-                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${sortBy === f ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-700 text-slate-500 hover:text-slate-300'}`}>
+                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${sortBy === f ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                   {f}{sortBy === f ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                 </button>
               ))}
@@ -283,18 +302,18 @@ function IconBtn({ onClick, title, children }) {
     <button
       onClick={onClick}
       title={title}
-      className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-700 transition-colors"
+      className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors"
     >
       {children}
     </button>
   );
 }
 
-function SummaryCard({ label, value, icon, valueClass = 'text-white' }) {
+function SummaryCard({ label, value, icon, valueClass = 'text-slate-900 dark:text-white' }) {
   return (
-    <div className="bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-700">
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400">{label}</span>
+        <span className="text-xs text-slate-600 dark:text-slate-400">{label}</span>
         <span className="text-sm">{icon}</span>
       </div>
       <div className={`text-2xl font-bold ${valueClass}`}>{value}</div>
@@ -311,14 +330,14 @@ function DiskSummaryCard({ system, onClick }) {
   const textColor = percent > 90 ? 'text-red-400' : percent > 75 ? 'text-yellow-400' : 'text-emerald-400';
 
   return (
-    <div className="bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-700 cursor-pointer active:bg-slate-750 hover:border-emerald-700 transition-colors" onClick={onClick}>
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 cursor-pointer active:bg-slate-200 dark:active:bg-slate-750 hover:border-emerald-700 transition-colors" onClick={onClick}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400">Disk</span>
-        <span className="text-xs text-slate-500">↗</span>
+        <span className="text-xs text-slate-600 dark:text-slate-400">Disk</span>
+        <span className="text-xs text-slate-500 dark:text-slate-500">↗</span>
       </div>
       <div className={`text-lg sm:text-xl font-bold ${textColor}`}>{formatBytes(used)}</div>
-      <div className="text-xs text-slate-500 mb-1.5">{percent}% of {formatBytes(total)}</div>
-      <div className="h-1.5 bg-slate-700 rounded-full">
+      <div className="text-xs text-slate-500 dark:text-slate-500 mb-1.5">{percent}% of {formatBytes(total)}</div>
+      <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
         <div className={`h-1.5 rounded-full transition-all duration-700 ${pctColor}`} style={{ width: `${percent}%` }} />
       </div>
     </div>
@@ -336,36 +355,36 @@ function OfflinePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-      <div className="bg-slate-800 border border-slate-700 rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl">
         {/* Icon */}
         <div className="relative w-20 h-20 mx-auto mb-8">
           <div className="w-20 h-20 rounded-2xl bg-indigo-600 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-slate-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
             </svg>
           </div>
-          <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-red-500 rounded-full border-4 border-slate-800 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-red-500 rounded-full border-4 border-slate-100 dark:border-slate-800 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-slate-900 dark:text-white" viewBox="0 0 24 24" fill="currentColor">
               <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
             </svg>
           </div>
         </div>
 
-        <h1 className="text-xl font-bold text-white mb-2">Server is Offline</h1>
-        <p className="text-sm text-slate-400 leading-relaxed mb-8">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Server is Offline</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
           App Stats can't be reached right now. The backend may be restarting or temporarily unavailable.
         </p>
 
         {/* Pulsing status */}
         <div className="flex items-center justify-center gap-2 mb-6">
           <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-          <span className="text-xs text-slate-500">Retrying in <span className="text-slate-300 font-semibold">{secs}s</span></span>
+          <span className="text-xs text-slate-500 dark:text-slate-500">Retrying in <span className="text-slate-700 dark:text-slate-300 font-semibold">{secs}s</span></span>
         </div>
 
         <button
           onClick={() => window.location.reload()}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm py-3 rounded-xl transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-slate-900 dark:text-white font-semibold text-sm py-3 rounded-xl transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />

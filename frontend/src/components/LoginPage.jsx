@@ -123,13 +123,13 @@ export default function LoginPage({ onLogin }) {
   // ── Enroll screen ───────────────────────────────────────────────────────────
   if (step === 'enroll') {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 pt-[env(safe-area-inset-top)]">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-6 pt-[env(safe-area-inset-top)]">
         <div className="w-full max-w-sm text-center">
           <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-indigo-900/50 border border-indigo-700 flex items-center justify-center">
             <FaceIdIcon className="w-12 h-12 text-indigo-400" />
           </div>
-          <h2 className="text-2xl font-semibold text-white mb-2">Enable Face ID</h2>
-          <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">Enable Face ID</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
             Sign in instantly next time using Face ID instead of your password.
           </p>
 
@@ -142,7 +142,7 @@ export default function LoginPage({ onLogin }) {
           <button
             onClick={enrollFaceId}
             disabled={enrolling}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-slate-900 dark:text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
           >
             <FaceIdIcon className="w-5 h-5" />
             {enrolling ? 'Setting up…' : 'Enable Face ID'}
@@ -150,7 +150,7 @@ export default function LoginPage({ onLogin }) {
 
           <button
             onClick={skipEnroll}
-            className="w-full text-slate-400 hover:text-white py-3 text-sm transition-colors"
+            className="w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white py-3 text-sm transition-colors"
           >
             Not now
           </button>
@@ -161,13 +161,13 @@ export default function LoginPage({ onLogin }) {
 
   // ── Login screen ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 pt-[env(safe-area-inset-top)]">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4 pt-[env(safe-area-inset-top)]">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white mb-3">A</div>
-          <h1 className="text-xl font-semibold text-white">App Stats</h1>
-          <p className="text-sm text-slate-400 mt-1">Raspberry Pi Monitor</p>
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold text-slate-900 dark:text-white mb-3">A</div>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">App Stats</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Raspberry Pi Monitor</p>
         </div>
 
         {/* Face ID button — shown if server has a registered credential */}
@@ -175,7 +175,7 @@ export default function LoginPage({ onLogin }) {
           <button
             onClick={loginWithFaceId}
             disabled={faceLoading}
-            className="w-full flex items-center justify-center gap-3 bg-slate-800 hover:bg-slate-750 active:bg-slate-700 border border-slate-600 hover:border-indigo-600 text-white font-medium py-4 rounded-2xl text-sm transition-colors mb-5 disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 active:bg-slate-200 dark:active:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:border-indigo-600 text-slate-900 dark:text-white font-medium py-4 rounded-2xl text-sm transition-colors mb-5 disabled:opacity-60"
           >
             <FaceIdIcon className="w-6 h-6 text-indigo-400" />
             {faceLoading ? 'Checking Face ID…' : 'Sign in with Face ID'}
@@ -185,16 +185,16 @@ export default function LoginPage({ onLogin }) {
         {/* Divider */}
         {webAuthnSupported && serverHasCred && (
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-slate-700" />
-            <span className="text-xs text-slate-500">or use password</span>
-            <div className="flex-1 h-px bg-slate-700" />
+            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
+            <span className="text-xs text-slate-500 dark:text-slate-500">or use password</span>
+            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
           </div>
         )}
 
         {/* Password form */}
-        <form onSubmit={submit} className="bg-slate-800 rounded-2xl border border-slate-700 p-5 space-y-4">
+        <form onSubmit={submit} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Username</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Username</label>
             <input
               type="text"
               value={username}
@@ -203,26 +203,26 @@ export default function LoginPage({ onLogin }) {
               autoCapitalize="none"
               autoCorrect="off"
               required
-              className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               placeholder="Enter username"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Password</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 pr-10 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                 placeholder="Enter password"
               />
               <button
                 type="button"
                 onClick={() => setShowPass(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1"
                 tabIndex={-1}
               >
                 {showPass ? <EyeSlashIcon /> : <EyeIcon />}
@@ -239,13 +239,13 @@ export default function LoginPage({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-slate-900 dark:text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-600 mt-5">Raspberry Pi · App Stats Monitor</p>
+        <p className="text-center text-xs text-slate-500 dark:text-slate-600 mt-5">Raspberry Pi · App Stats Monitor</p>
       </div>
     </div>
   );

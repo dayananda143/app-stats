@@ -55,25 +55,25 @@ export default function SystemHistoryModal({ token, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-gray-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h2 className="font-semibold text-white">System History <span className="text-slate-500 font-normal text-sm">24h</span></h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="font-semibold text-slate-900 dark:text-white">System History <span className="text-slate-500 dark:text-slate-500 font-normal text-sm">24h</span></h2>
           <div className="flex items-center gap-2">
             {!loading && data.length > 0 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-500">Export:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-500">Export:</span>
                 <button
                   onClick={() => downloadExport('/api/export/system?format=csv', token)}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
                 >CSV</button>
                 <button
                   onClick={() => downloadExport('/api/export/system?format=json', token)}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
                 >JSON</button>
               </div>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none px-1">×</button>
+            <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xl leading-none px-1">×</button>
           </div>
         </div>
 
@@ -82,16 +82,16 @@ export default function SystemHistoryModal({ token, onClose }) {
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-700 text-slate-400 hover:text-white'}`}>
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
                 {t.label}
               </button>
             ))}
           </div>
 
           {loading ? (
-            <div className="text-slate-400 text-center py-16">Loading…</div>
+            <div className="text-slate-600 dark:text-slate-400 text-center py-16">Loading…</div>
           ) : data.length === 0 ? (
-            <div className="text-slate-500 text-center py-16 text-sm">No history yet — data is recorded once per minute.</div>
+            <div className="text-slate-500 dark:text-slate-500 text-center py-16 text-sm">No history yet — data is recorded once per minute.</div>
           ) : (
             <>
               {/* Stats row */}
@@ -102,9 +102,9 @@ export default function SystemHistoryModal({ token, onClose }) {
                   { label: 'Avg',     val: avg },
                   { label: 'Max',     val: max },
                 ].map(s => (
-                  <div key={s.label} className="bg-slate-800 rounded-xl p-3 border border-slate-700 text-center">
-                    <div className="text-xs text-slate-400 mb-1">{s.label}</div>
-                    <div className="text-sm font-semibold text-white">
+                  <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700 text-center">
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{s.label}</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">
                       {s.val !== null && s.val !== undefined ? `${s.val.toFixed(1)}${current.unit}` : '—'}
                     </div>
                   </div>
@@ -112,9 +112,9 @@ export default function SystemHistoryModal({ token, onClose }) {
               </div>
 
               {/* Chart */}
-              <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
+              <div className="bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 {filtered.length < 2
-                  ? <div className="text-slate-500 text-center py-8 text-sm">Not enough data for this metric yet.</div>
+                  ? <div className="text-slate-500 dark:text-slate-500 text-center py-8 text-sm">Not enough data for this metric yet.</div>
                   : <TimeSeriesChart data={values} timestamps={timestamps} color={current.color} unit={current.unit} min={min} max={max} />
                 }
               </div>
@@ -127,7 +127,7 @@ export default function SystemHistoryModal({ token, onClose }) {
 }
 
 function TimeSeriesChart({ data, timestamps, color, unit, min, max }) {
-  if (!data || data.length < 2) return <div className="text-slate-500 text-center py-8 text-sm">Not enough data yet.</div>;
+  if (!data || data.length < 2) return <div className="text-slate-500 dark:text-slate-500 text-center py-8 text-sm">Not enough data yet.</div>;
 
   const W = 500, H = 120, PAD = { top: 8, right: 8, bottom: 24, left: 36 };
   const iW = W - PAD.left - PAD.right;
