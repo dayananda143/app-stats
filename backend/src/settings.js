@@ -24,6 +24,7 @@ const DEFAULTS = {
   diskAlertPercent: 90,
   sslAlertEnabled: true,
   sslDomains: [],
+  publicIpAlertEnabled: true,
 };
 
 function load() {

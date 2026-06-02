@@ -185,6 +185,12 @@ export default function SettingsModal({ token, onClose }) {
                 </Field>
               </Section>
 
+              <Section title="Public IP Change Alert">
+                <Field label="Alert when public IP changes" hint="Checks every 15 min via api.ipify.org">
+                  <Toggle value={form.publicIpAlertEnabled ?? true} onChange={v => update('publicIpAlertEnabled', v)} />
+                </Field>
+              </Section>
+
               <Section title="Telegram Notifications">
                 <div className="text-xs text-slate-500 mb-3 leading-relaxed">
                   Set <code className="text-slate-300 bg-slate-800 px-1 rounded">TELEGRAM_BOT_TOKEN</code> in <code className="text-slate-300 bg-slate-800 px-1 rounded">.env</code> via{' '}

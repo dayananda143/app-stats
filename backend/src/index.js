@@ -157,6 +157,7 @@ let sysRamAlertState = 'normal';
 let lastSysRamAlertAt = 0;
 let diskAlertState = 'normal';
 let lastDiskAlertAt = 0;
+let lastKnownPublicIp = null;
 
 // ─── Express + Socket.io ─────────────────────────────────────────────────────
 const app = express();
@@ -339,6 +340,11 @@ app.get('/api/settings', (req, res) => res.json(settings.load()));
 app.put('/api/settings', (req, res) => {
   try { settings.save(req.body); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Public IP ───────────────────────────────────────────────────────────────
+app.get('/api/system/public-ip', requireAuth, (req, res) => {
+  res.json({ ip: lastKnownPublicIp });
 });
 
 // ─── SSL cert status ─────────────────────────────────────────────────────────
@@ -915,6 +921,33 @@ async function broadcastStats() {
 
 io.on('connection', socket => broadcastStats());
 
+async function checkPublicIp() {
+  const cfg = settings.load();
+  if (!cfg.publicIpAlertEnabled) return;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const { ip } = await res.json();
+    if (lastKnownPublicIp === null) {
+      lastKnownPublicIp = ip;
+      console.log(`[ip] Public IP initialised: ${ip}`);
+      return;
+    }
+    if (ip !== lastKnownPublicIp) {
+      const prev = lastKnownPublicIp;
+      lastKnownPublicIp = ip;
+      logAlert('ip_change', `Public IP changed: ${prev} → ${ip}`, null);
+      if (cfg.telegramEnabled && cfg.telegramChatId) {
+        sendTelegramWithChatId(cfg.telegramChatId,
+          `🌐 <b>Public IP Changed</b>\n\n<b>Old:</b> <code>${prev}</code>\n<b>New:</b> <code>${ip}</code>\n\nUpdate your DNS if needed.`
+        ).catch(e => console.error('[telegram]', e.message));
+      }
+      console.log(`[ip] Public IP changed: ${prev} → ${ip}`);
+    }
+  } catch (e) {
+    console.warn('[ip] Check failed:', e.message);
+  }
+}
+
 async function runSslChecks() {
   const cfg = settings.load();
   if (!cfg.sslAlertEnabled || !cfg.sslDomains || cfg.sslDomains.length === 0) return;
@@ -937,5 +970,7 @@ pm2Connect().then(() => {
   setInterval(broadcastStats, 3000);
   runSslChecks();
   setInterval(runSslChecks, 12 * 60 * 60 * 1000); // every 12h
+  checkPublicIp();
+  setInterval(checkPublicIp, 15 * 60 * 1000); // every 15 min
   server.listen(PORT, () => console.log(`App Stats backend running on port ${PORT}`));
 }).catch(err => { console.error('PM2 connect failed:', err); process.exit(1); });
