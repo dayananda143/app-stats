@@ -4,6 +4,7 @@ const TABS = ['Thresholds', 'Notifications', 'Security'];
 
 export default function SettingsModal({ token, onClose }) {
   const [form, setForm] = useState(null);
+  const [original, setOriginal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +21,7 @@ export default function SettingsModal({ token, onClose }) {
 
   useEffect(() => {
     fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(setForm).catch(() => setError('Failed to load settings'));
+      .then(r => r.json()).then(d => { setForm(d); setOriginal(d); }).catch(() => setError('Failed to load settings'));
     fetch('/api/auth/webauthn/registered')
       .then(r => r.json()).then(d => setFaceIdRegistered(d.registered)).catch(() => {});
   }, [token]);
@@ -46,6 +47,7 @@ export default function SettingsModal({ token, onClose }) {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error('Save failed');
+      setOriginal(form);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) { setError(e.message); }
@@ -96,8 +98,8 @@ export default function SettingsModal({ token, onClose }) {
           {error && <div className="text-red-400 text-xs">{error}</div>}
           <button
             onClick={save}
-            disabled={saving || !form}
-            className={`w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+            disabled={saving || !form || JSON.stringify(form) === JSON.stringify(original)}
+            className={`w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               saved ? 'bg-emerald-700 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
             }`}
           >
