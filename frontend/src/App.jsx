@@ -10,6 +10,7 @@ import AlertsModal from './components/AlertsModal';
 import SettingsModal from './components/SettingsModal';
 import SystemHistoryModal from './components/SystemHistoryModal';
 import HardwareSection from './components/HardwareSection';
+import ConnectivityCard from './components/ConnectivityCard';
 import LoginPage from './components/LoginPage';
 
 const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
@@ -217,6 +218,9 @@ export default function App() {
         {system && (
           <SystemStats system={system} onRamClick={() => setRamModal(true)} onHistoryClick={() => setSystemHistoryModal(true)} token={token} />
         )}
+
+        {/* Connectivity */}
+        {system && <ConnectivityCard system={system} />}
 
         {/* Hardware section */}
         <HardwareSection token={token} />

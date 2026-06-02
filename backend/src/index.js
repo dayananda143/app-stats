@@ -17,6 +17,7 @@ const {
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
 const db = require('./db');
+const os = require('os');
 const { getNetworkIO } = require('./network');
 const { getDiskIO } = require('./disk');
 const settings = require('./settings');
@@ -734,6 +735,24 @@ function formatProcess(p) {
   };
 }
 
+// ─── Network interfaces ───────────────────────────────────────────────────────
+function getLocalInterfaces() {
+  const ifaces = os.networkInterfaces();
+  const result = [];
+  for (const [name, addresses] of Object.entries(ifaces)) {
+    if (/^(lo|docker|br-|veth)/.test(name)) continue;
+    const ipv4 = addresses.find(a => a.family === 'IPv4' && !a.internal);
+    if (!ipv4) continue;
+    let type = 'Other';
+    if (/^(eth|enp|ens|eno)\d/.test(name)) type = 'LAN';
+    else if (/^(wlan|wlp)\d/.test(name)) type = 'WiFi';
+    else if (/^tailscale/.test(name)) type = 'Tailscale';
+    else if (/^tun/.test(name)) type = 'VPN';
+    result.push({ name, type, ip: ipv4.address });
+  }
+  return result;
+}
+
 // ─── Disk + history caches ───────────────────────────────────────────────────
 let cachedDisk = null;
 async function refreshDisk() {
@@ -801,6 +820,8 @@ async function broadcastStats() {
       temp, throttle, nginx,
       network: netIO,
       disk_io: diskIO,
+      publicIp: lastKnownPublicIp,
+      interfaces: getLocalInterfaces(),
     };
 
     // Temperature alert
