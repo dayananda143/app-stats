@@ -143,11 +143,11 @@ function KillDialog({ name, pids, onConfirm, onCancel }) {
       onClick={() => !killing && onCancel()}
     >
       <div
-        className="bg-gray-50 dark:bg-slate-900 border border-red-800/60 rounded-2xl p-5 w-full max-w-sm shadow-2xl"
+        className="bg-gray-50 dark:bg-slate-900 border border-red-200 dark:border-red-800/60 rounded-2xl p-5 w-full max-w-sm shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-8 h-8 rounded-full bg-red-900/40 border border-red-700 flex items-center justify-center text-red-400 text-sm font-bold shrink-0">!</span>
+          <span className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-700 flex items-center justify-center text-red-400 text-sm font-bold shrink-0">!</span>
           <h3 className="text-slate-900 dark:text-white font-semibold">Force Kill Process</h3>
         </div>
         <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">
@@ -214,7 +214,7 @@ function ProcessRow({ proc, total, onKill }) {
         </div>
         <button
           onClick={e => { e.stopPropagation(); setKillTarget({ name: proc.name, pids: proc.pids }); }}
-          className="text-xs px-2 py-0.5 rounded border border-red-800/70 bg-red-900/20 text-red-400 hover:bg-red-900/50 transition-colors shrink-0 ml-1"
+          className="text-xs px-2 py-0.5 rounded border border-red-200 dark:border-red-800/70 bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shrink-0 ml-1"
           title="Force kill"
         >
           Kill
@@ -242,7 +242,7 @@ function ProcessRow({ proc, total, onKill }) {
                 <span className="text-xs text-slate-600 dark:text-slate-400 w-14 text-right">{formatBytes(item.rss)}</span>
                 <button
                   onClick={() => setKillTarget({ name: `${proc.name} (PID ${item.pid})`, pids: [item.pid] })}
-                  className="text-xs px-1.5 py-0.5 rounded border border-red-800/70 bg-red-900/20 text-red-400 hover:bg-red-900/50 transition-colors shrink-0"
+                  className="text-xs px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/70 bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shrink-0"
                   title="Force kill this PID"
                 >
                   Kill

@@ -82,7 +82,7 @@ export default function SystemHistoryModal({ token, onClose }) {
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${tab === t.key ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
                 {t.label}
               </button>
             ))}

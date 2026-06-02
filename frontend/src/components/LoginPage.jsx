@@ -125,7 +125,7 @@ export default function LoginPage({ onLogin }) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-6 pt-[env(safe-area-inset-top)]">
         <div className="w-full max-w-sm text-center">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-indigo-900/50 border border-indigo-700 flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 flex items-center justify-center">
             <FaceIdIcon className="w-12 h-12 text-indigo-400" />
           </div>
           <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">Enable Face ID</h2>
@@ -134,7 +134,7 @@ export default function LoginPage({ onLogin }) {
           </p>
 
           {error && (
-            <div className="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded-lg px-3 py-2 mb-4 text-left">
+            <div className="text-xs text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4 text-left">
               {error}
             </div>
           )}
@@ -231,7 +231,7 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           {error && (
-            <div className="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded-lg px-3 py-2">
+            <div className="text-xs text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
               {error}
             </div>
           )}

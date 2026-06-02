@@ -96,7 +96,7 @@ export default function LogModal({ name, token, onClose }) {
             </div>
             <button
               onClick={() => setStreaming(s => !s)}
-              className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${streaming ? 'border-emerald-700 bg-emerald-900/30 text-emerald-400' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+              className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${streaming ? 'border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-400' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
             >
               {streaming ? '⏸ Pause' : '▶ Resume'}
             </button>

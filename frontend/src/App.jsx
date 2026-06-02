@@ -253,7 +253,7 @@ export default function App() {
             <div className="flex items-center gap-1">
               {['name','status','cpu','memory'].map(f => (
                 <button key={f} onClick={() => cycleSort(f)}
-                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${sortBy === f ? 'border-indigo-600 bg-indigo-900/40 text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${sortBy === f ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                   {f}{sortBy === f ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                 </button>
               ))}
@@ -330,7 +330,7 @@ function DiskSummaryCard({ system, onClick }) {
   const textColor = percent > 90 ? 'text-red-400' : percent > 75 ? 'text-yellow-400' : 'text-emerald-400';
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 cursor-pointer active:bg-slate-200 dark:active:bg-slate-750 hover:border-emerald-700 transition-colors" onClick={onClick}>
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 cursor-pointer active:bg-slate-200 dark:active:bg-slate-750 hover:border-emerald-200 dark:border-emerald-700 transition-colors" onClick={onClick}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-slate-600 dark:text-slate-400">Disk</span>
         <span className="text-xs text-slate-500 dark:text-slate-500">↗</span>

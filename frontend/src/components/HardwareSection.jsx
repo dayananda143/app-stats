@@ -490,7 +490,7 @@ function PackageRow({ pkg, onUpdate }) {
       </div>
       <button
         onClick={onUpdate}
-        className="shrink-0 ml-3 text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-500 hover:text-indigo-300 hover:bg-indigo-900/30 opacity-0 group-hover:opacity-100 transition-all"
+        className="shrink-0 ml-3 text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-500 hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 opacity-0 group-hover:opacity-100 transition-all"
       >
         Update
       </button>

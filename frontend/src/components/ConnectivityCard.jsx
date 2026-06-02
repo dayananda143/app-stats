@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 const TYPE_STYLES = {
-  LAN:       { badge: 'bg-blue-900/40 text-blue-300 border-blue-800',       dot: 'bg-blue-400'     },
-  WiFi:      { badge: 'bg-cyan-900/40 text-cyan-300 border-cyan-800',       dot: 'bg-cyan-400'     },
-  Tailscale: { badge: 'bg-violet-900/40 text-violet-300 border-violet-800', dot: 'bg-violet-400'   },
-  VPN:       { badge: 'bg-amber-900/40 text-amber-300 border-amber-800',    dot: 'bg-amber-400'    },
+  LAN:       { badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-300 border-blue-200 dark:border-blue-800',       dot: 'bg-blue-400'     },
+  WiFi:      { badge: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-300 border-cyan-200 dark:border-cyan-800',       dot: 'bg-cyan-400'     },
+  Tailscale: { badge: 'bg-violet-100 dark:bg-violet-900/40 text-violet-300 border-violet-200 dark:border-violet-800', dot: 'bg-violet-400'   },
+  VPN:       { badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800',    dot: 'bg-amber-400'    },
   Other:     { badge: 'bg-slate-100/60 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600',    dot: 'bg-slate-400'    },
 };
 
@@ -46,7 +46,7 @@ export default function ConnectivityCard({ system }) {
             {publicIp
               ? <CopyableIp ip={publicIp} />
               : <span className="text-xs text-slate-500 dark:text-slate-500">Detecting…</span>}
-            <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-900/30 text-emerald-300 border-emerald-800 shrink-0">WAN</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 dark:bg-emerald-900/30 text-emerald-300 border-emerald-200 dark:border-emerald-800 shrink-0">WAN</span>
           </div>
         </div>
 

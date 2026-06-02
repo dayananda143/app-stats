@@ -63,7 +63,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-700' : 'border-slate-200 dark:border-slate-700'}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex flex-col gap-3 transition-colors ${hasMemLeak ? 'border-yellow-200 dark:border-yellow-700' : 'border-slate-200 dark:border-slate-700'}`}>
 
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
@@ -73,7 +73,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             <h3 className="font-semibold text-slate-900 dark:text-white text-sm truncate max-w-[140px] sm:max-w-none">{displayName(proc.name)}</h3>
             <span className={`text-xs px-1.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
               isOnline
-                ? 'border-emerald-800 bg-emerald-900/40 text-emerald-400'
+                ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-400'
                 : 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_COLORS[proc.status] || 'bg-slate-400'}`} />
@@ -85,12 +85,12 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
               </span>
             )}
             {proc.dbSize && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full border border-indigo-800 bg-indigo-900/30 text-indigo-400 shrink-0">
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-400 shrink-0">
                 DB {formatBytes(proc.dbSize.bytes)}
               </span>
             )}
             {hasMemLeak && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full border border-yellow-700 bg-yellow-900/30 text-yellow-400 shrink-0">
+              <span className="text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-400 shrink-0">
                 ⚠ leak?
               </span>
             )}
@@ -163,7 +163,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
             onKeyDown={e => e.key === 'Escape' && (setEditingNote(false), setNote(proc.note || ''))}
             placeholder="Add a note…"
             rows={2}
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-indigo-700 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-300 placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none resize-none text-xs"
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-indigo-200 dark:border-indigo-700 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-300 placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none resize-none text-xs"
             autoFocus
           />
         ) : (
@@ -210,17 +210,17 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
         ) : (
           <div className="flex gap-1.5 sm:gap-2 flex-wrap">
             {isOnline && (
-              <ActionBtn onClick={() => setConfirmAction('restart')} disabled={loading} className="bg-amber-900/40 text-amber-400 border-amber-800 active:bg-amber-900/80">
+              <ActionBtn onClick={() => setConfirmAction('restart')} disabled={loading} className="bg-amber-100 dark:bg-amber-900/40 text-amber-400 border-amber-200 dark:border-amber-800 active:bg-amber-200 dark:active:bg-amber-900/80">
                 {actionState === 'restart' ? '…' : 'Restart'}
               </ActionBtn>
             )}
             {isOnline && (
-              <ActionBtn onClick={() => setConfirmAction('stop')} disabled={loading} className="bg-red-900/40 text-red-400 border-red-800 active:bg-red-900/80">
+              <ActionBtn onClick={() => setConfirmAction('stop')} disabled={loading} className="bg-red-100 dark:bg-red-900/40 text-red-400 border-red-200 dark:border-red-800 active:bg-red-200 dark:active:bg-red-900/80">
                 {actionState === 'stop' ? '…' : 'Stop'}
               </ActionBtn>
             )}
             {isStopped && (
-              <ActionBtn onClick={() => setConfirmAction('start')} disabled={loading} className="bg-emerald-900/40 text-emerald-400 border-emerald-800 active:bg-emerald-900/80">
+              <ActionBtn onClick={() => setConfirmAction('start')} disabled={loading} className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-400 border-emerald-200 dark:border-emerald-800 active:bg-emerald-200 dark:active:bg-emerald-900/80">
                 {actionState === 'start' ? '…' : 'Start'}
               </ActionBtn>
             )}
@@ -235,7 +235,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
                 href={proc.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border border-indigo-800 bg-indigo-900/40 text-indigo-400 active:bg-indigo-900/80 transition-colors"
+                className="px-3 py-2 sm:py-1.5 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-400 active:bg-indigo-200 dark:active:bg-indigo-900/80 transition-colors"
               >
                 Open ↗
               </a>

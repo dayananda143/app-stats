@@ -33,7 +33,7 @@ export default function SystemStats({ system, onRamClick, onHistoryClick, token 
             disabled={clearing}
             className={`text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
               cleared
-                ? 'border-emerald-700 bg-emerald-900/30 text-emerald-400'
+                ? 'border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-400'
                 : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -166,7 +166,7 @@ function TempCard({ temp }) {
   const warning = temp !== null && temp >= 80;
   const pct = temp !== null ? Math.min((temp / 100) * 100, 100) : 0;
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 transition-colors ${warning ? 'border-red-700' : 'border-slate-200 dark:border-slate-700'}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 transition-colors ${warning ? 'border-red-200 dark:border-red-700' : 'border-slate-200 dark:border-slate-700'}`}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-slate-600 dark:text-slate-400">Temp</span>
         {warning && <span className="text-xs text-red-400 animate-pulse">HOT</span>}
