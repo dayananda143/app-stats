@@ -72,7 +72,7 @@ export default function SettingsModal({ token, onClose }) {
               key={t}
               onClick={() => setTab(t)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                tab === t ? 'bg-indigo-600 text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                tab === t ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >{t}</button>
           ))}
@@ -98,7 +98,7 @@ export default function SettingsModal({ token, onClose }) {
             onClick={save}
             disabled={saving || !form}
             className={`w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-              saved ? 'bg-emerald-700 text-slate-900 dark:text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white'
+              saved ? 'bg-emerald-700 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
             }`}
           >
             {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Settings'}

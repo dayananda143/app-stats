@@ -196,7 +196,7 @@ export default function ProcessCard({ proc, actionState, onRestart, onStop, onSt
                 else if (confirmAction === 'stop') onStop();
                 else if (confirmAction === 'start') onStart();
               }}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
             >
               Confirm
             </button>

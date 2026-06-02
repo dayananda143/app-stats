@@ -142,7 +142,7 @@ export default function LoginPage({ onLogin }) {
           <button
             onClick={enrollFaceId}
             disabled={enrolling}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-slate-900 dark:text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
           >
             <FaceIdIcon className="w-5 h-5" />
             {enrolling ? 'Setting up…' : 'Enable Face ID'}
@@ -165,7 +165,7 @@ export default function LoginPage({ onLogin }) {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold text-slate-900 dark:text-white mb-3">A</div>
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white mb-3">A</div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white">App Stats</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Raspberry Pi Monitor</p>
         </div>
@@ -239,7 +239,7 @@ export default function LoginPage({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-slate-900 dark:text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

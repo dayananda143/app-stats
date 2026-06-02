@@ -382,7 +382,7 @@ function UpdatesModal({ updates, token, onClose, onInstallDone }) {
             {!installState && allPackageNames.length > 0 && (
               <button
                 onClick={() => startInstall(allPackageNames)}
-                className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white font-medium transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
               >
                 Update All
               </button>

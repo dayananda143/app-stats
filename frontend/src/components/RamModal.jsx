@@ -169,7 +169,7 @@ function KillDialog({ name, pids, onConfirm, onCancel }) {
           <button
             onClick={handleConfirm}
             disabled={killing}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-700 hover:bg-red-600 text-slate-900 dark:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-700 hover:bg-red-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {killing ? 'Killing…' : 'Force Kill'}
           </button>
