@@ -143,6 +143,18 @@ export default function SettingsModal({ token, onClose }) {
                 </Field>
               </Section>
 
+              <Section title="Memory Leak Detector">
+                <Field label="Enable leak detection">
+                  <Toggle value={form.memLeakEnabled ?? true} onChange={v => update('memLeakEnabled', v)} />
+                </Field>
+                <Field label="Detection window (minutes)" hint="How long RAM must climb before alerting">
+                  <NumberInput value={form.memLeakWindowMinutes ?? 30} onChange={v => update('memLeakWindowMinutes', v)} min={10} max={120} />
+                </Field>
+                <Field label="Growth threshold (%)" hint="Minimum RAM increase over the window to trigger">
+                  <NumberInput value={form.memLeakGrowthPercent ?? 20} onChange={v => update('memLeakGrowthPercent', v)} min={5} max={100} />
+                </Field>
+              </Section>
+
               <Section title="Disk Space Alert">
                 <Field label="Disk usage threshold (%)" hint="Alert when root disk usage exceeds this">
                   <div className="flex items-center gap-3">

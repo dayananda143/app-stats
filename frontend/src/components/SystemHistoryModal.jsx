@@ -38,8 +38,9 @@ export default function SystemHistoryModal({ token, onClose }) {
     { key: 'temp',    label: 'Temp °C',    unit: '°C',   color: '#f97316', getValue: d => d.temp },
     { key: 'net_in',  label: 'Net In',     unit: 'KB/s', color: '#06b6d4', getValue: d => d.net_in  != null ? +(d.net_in  / 1024).toFixed(1) : null },
     { key: 'net_out', label: 'Net Out',    unit: 'KB/s', color: '#ec4899', getValue: d => d.net_out != null ? +(d.net_out / 1024).toFixed(1) : null },
-    { key: 'disk_r',  label: 'Disk Read',  unit: 'KB/s', color: '#10b981', getValue: d => d.disk_read  != null ? +(d.disk_read  / 1024).toFixed(1) : null },
-    { key: 'disk_w',  label: 'Disk Write', unit: 'KB/s', color: '#f59e0b', getValue: d => d.disk_write != null ? +(d.disk_write / 1024).toFixed(1) : null },
+    { key: 'disk_r',  label: 'Disk Read',   unit: 'KB/s',  color: '#10b981', getValue: d => d.disk_read  != null ? +(d.disk_read  / 1024).toFixed(1) : null },
+    { key: 'disk_w',  label: 'Disk Write',  unit: 'KB/s',  color: '#f59e0b', getValue: d => d.disk_write != null ? +(d.disk_write / 1024).toFixed(1) : null },
+    { key: 'nginx',   label: 'Nginx Req/s', unit: 'req/s', color: '#22d3ee', getValue: d => d.nginx_req  != null ? +d.nginx_req.toFixed(2) : null },
   ];
   const current = tabs.find(t => t.key === tab);
   const filtered = data.filter(d => current.getValue(d) != null);

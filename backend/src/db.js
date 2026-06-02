@@ -46,9 +46,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_webauthn_username ON webauthn_credentials(username);
 `);
 
-// Migrate: add disk I/O columns (safe — throws if already exists)
+// Migrate: add columns (safe — throws if already exists)
 try { db.exec('ALTER TABLE system_history ADD COLUMN disk_read INTEGER'); } catch {}
 try { db.exec('ALTER TABLE system_history ADD COLUMN disk_write INTEGER'); } catch {}
+try { db.exec('ALTER TABLE system_history ADD COLUMN nginx_req REAL'); } catch {}
 
 // Prune data older than 25 hours every hour
 setInterval(() => {

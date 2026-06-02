@@ -25,6 +25,9 @@ const DEFAULTS = {
   sslAlertEnabled: true,
   sslDomains: [],
   publicIpAlertEnabled: true,
+  memLeakEnabled: true,
+  memLeakWindowMinutes: 30,
+  memLeakGrowthPercent: 20,
 };
 
 function load() {

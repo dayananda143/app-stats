@@ -159,6 +159,11 @@ let lastSysRamAlertAt = 0;
 let diskAlertState = 'normal';
 let lastDiskAlertAt = 0;
 let lastKnownPublicIp = null;
+let prevNginxReqs = null;
+let prevNginxTs = null;
+let currentNginxReqRate = 0;
+const memLeakSamples = {};  // { name: [{ ts, mem }] }
+const memLeakAlerted = {};  // { name: boolean }
 
 // ─── Express + Socket.io ─────────────────────────────────────────────────────
 const app = express();
@@ -451,14 +456,14 @@ app.get('/api/processes/:name/history', (req, res) => {
 // 24h system history
 app.get('/api/system/history', (req, res) => {
   const since = Date.now() - 24 * 60 * 60 * 1000;
-  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
+  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write, nginx_req FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
   res.json(rows);
 });
 
 // Export system history as CSV or JSON download
 app.get('/api/export/system', (req, res) => {
   const since = Date.now() - 24 * 60 * 60 * 1000;
-  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
+  const rows = db.prepare('SELECT ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write, nginx_req FROM system_history WHERE ts > ? ORDER BY ts ASC').all(since);
   const fmt = req.query.format === 'csv' ? 'csv' : 'json';
   const date = new Date().toISOString().slice(0, 10);
   if (fmt === 'csv') {
@@ -811,6 +816,17 @@ async function broadcastStats() {
       return fmt;
     });
 
+    // Nginx req/s rate
+    if (nginx && nginx.requests != null) {
+      if (prevNginxReqs !== null && prevNginxTs !== null) {
+        const elapsed = (now - prevNginxTs) / 1000;
+        const delta = nginx.requests - prevNginxReqs;
+        if (delta >= 0 && elapsed > 0) currentNginxReqRate = +(delta / elapsed).toFixed(2);
+      }
+      prevNginxReqs = nginx.requests;
+      prevNginxTs = now;
+    }
+
     const temp = cpu_temp();
     const systemStats = {
       cpu: Math.round(cpu.currentLoad * 10) / 10,
@@ -822,6 +838,7 @@ async function broadcastStats() {
       disk_io: diskIO,
       publicIp: lastKnownPublicIp,
       interfaces: getLocalInterfaces(),
+      nginxReqRate: currentNginxReqRate,
     };
 
     // Temperature alert
@@ -924,13 +941,50 @@ async function broadcastStats() {
       }
     }
 
-    // Write to SQLite once per minute
+    // Write to SQLite + run memory leak checks once per minute
     if (now - lastHistoryWrite > 60000) {
       lastHistoryWrite = now;
       const insertProc = db.prepare('INSERT INTO process_history (name, ts, cpu, memory, status) VALUES (?, ?, ?, ?, ?)');
       processes.forEach(p => insertProc.run(p.name, now, p.cpu, p.memory, p.status));
-      db.prepare('INSERT INTO system_history (ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(now, systemStats.cpu, mem.used, temp, netIO.rxBps, netIO.txBps, diskIO.readBps, diskIO.writeBps);
+      db.prepare('INSERT INTO system_history (ts, cpu, mem_used, temp, net_in, net_out, disk_read, disk_write, nginx_req) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(now, systemStats.cpu, mem.used, temp, netIO.rxBps, netIO.txBps, diskIO.readBps, diskIO.writeBps, currentNginxReqRate || null);
+
+      // Memory leak detection — sample RAM per minute per process
+      processes.forEach(p => {
+        if (p.status !== 'online') { memLeakSamples[p.name] = []; memLeakAlerted[p.name] = false; return; }
+        if (!memLeakSamples[p.name]) memLeakSamples[p.name] = [];
+        memLeakSamples[p.name].push({ ts: now, mem: p.memory });
+        const cutoff = now - 46 * 60 * 1000;
+        memLeakSamples[p.name] = memLeakSamples[p.name].filter(s => s.ts > cutoff);
+      });
+
+      if (cfg.memLeakEnabled) {
+        const windowMs = (cfg.memLeakWindowMinutes || 30) * 60 * 1000;
+        const growthThr = (cfg.memLeakGrowthPercent || 20) / 100;
+        const minSamples = Math.floor((cfg.memLeakWindowMinutes || 30) * 0.8);
+        processes.forEach(p => {
+          if (p.status !== 'online') return;
+          const windowSamples = (memLeakSamples[p.name] || []).filter(s => s.ts > now - windowMs);
+          if (windowSamples.length < minSamples) return;
+          const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+          const firstAvg = avg(windowSamples.slice(0, 3).map(s => s.mem));
+          const lastAvg  = avg(windowSamples.slice(-3).map(s => s.mem));
+          const growth = (lastAvg - firstAvg) / firstAvg;
+          if (growth >= growthThr && !memLeakAlerted[p.name]) {
+            memLeakAlerted[p.name] = true;
+            const growthMb = ((lastAvg - firstAvg) / 1024 / 1024).toFixed(0);
+            logAlert('mem_leak', `${p.name} possible memory leak`, `+${(growth * 100).toFixed(0)}% (+${growthMb}MB) over ${cfg.memLeakWindowMinutes}min`);
+            if (cfg.telegramEnabled && cfg.telegramChatId) {
+              sendTelegramWithChatId(cfg.telegramChatId,
+                `🚰 <b>Memory Leak: ${p.name}</b>\n\nRAM grew <b>+${(growth * 100).toFixed(0)}%</b> (+${growthMb}MB) over ${cfg.memLeakWindowMinutes} min\nCurrent: ${(lastAvg / 1024 / 1024).toFixed(0)} MB`
+              ).catch(e => console.error('[telegram]', e.message));
+            }
+            console.log(`[memleak] Alert: ${p.name} +${(growth * 100).toFixed(0)}% over ${cfg.memLeakWindowMinutes}min`);
+          } else if (growth < growthThr * 0.4) {
+            memLeakAlerted[p.name] = false;
+          }
+        });
+      }
     }
 
     const alertCount = db.prepare('SELECT COUNT(*) as n FROM alerts').get().n;
