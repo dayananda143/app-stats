@@ -20,6 +20,10 @@ const DEFAULTS = {
   stuckMinutes: 5,
   telegramEnabled: false,
   telegramChatId: '',
+  diskAlertEnabled: true,
+  diskAlertPercent: 90,
+  sslAlertEnabled: true,
+  sslDomains: [],
 };
 
 function load() {

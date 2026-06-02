@@ -22,6 +22,7 @@ const { getDiskIO } = require('./disk');
 const settings = require('./settings');
 const { sendTempAlert, sendProcessAlert } = require('./mailer');
 const { sendTelegramTempAlert, sendTelegramProcessAlert, sendTelegramWithChatId } = require('./telegram');
+const { checkAllCerts, getNewAlerts } = require('./ssl');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
@@ -154,6 +155,8 @@ let tempAlertState = 'normal';
 let lastTempAlertAt = 0;
 let sysRamAlertState = 'normal';
 let lastSysRamAlertAt = 0;
+let diskAlertState = 'normal';
+let lastDiskAlertAt = 0;
 
 // ─── Express + Socket.io ─────────────────────────────────────────────────────
 const app = express();
@@ -336,6 +339,18 @@ app.get('/api/settings', (req, res) => res.json(settings.load()));
 app.put('/api/settings', (req, res) => {
   try { settings.save(req.body); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── SSL cert status ─────────────────────────────────────────────────────────
+app.get('/api/ssl/status', requireAuth, async (req, res) => {
+  const cfg = settings.load();
+  if (!cfg.sslDomains || cfg.sslDomains.length === 0) return res.json([]);
+  try {
+    const results = await checkAllCerts(cfg.sslDomains);
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── Telegram test ───────────────────────────────────────────────────────────
@@ -862,6 +877,26 @@ async function broadcastStats() {
       }
     }
 
+    // Disk space alert
+    if (cfg.diskAlertEnabled && cachedDisk) {
+      const diskPct = Math.round(cachedDisk.use);
+      const diskThr = cfg.diskAlertPercent || 90;
+      const freeGb = (cachedDisk.free / 1024 ** 3).toFixed(1);
+      if (diskPct >= diskThr && diskAlertState === 'normal' && alertNow - lastDiskAlertAt > cooldownMs) {
+        diskAlertState = 'high'; lastDiskAlertAt = alertNow;
+        logAlert('disk_high', `Disk usage high: ${diskPct}%`, `Free: ${freeGb}GB  Threshold: ${diskThr}%`);
+        if (cfg.telegramEnabled && cfg.telegramChatId) {
+          process.env.TELEGRAM_CHAT_ID = cfg.telegramChatId;
+          sendTelegramWithChatId(cfg.telegramChatId,
+            `💾 <b>Disk Space Alert</b>\n\nUsage: <b>${diskPct}%</b> (threshold: ${diskThr}%)\nFree: ${freeGb} GB\n\n<a href="https://app-stats.money-matriz.co.in">Dashboard</a>`
+          ).catch(e => console.error('[telegram]', e.message));
+        }
+      } else if (diskPct < diskThr - 5 && diskAlertState === 'high') {
+        diskAlertState = 'normal';
+        logAlert('disk_ok', `Disk usage recovered: ${diskPct}%`, `Free: ${freeGb}GB`);
+      }
+    }
+
     // Write to SQLite once per minute
     if (now - lastHistoryWrite > 60000) {
       lastHistoryWrite = now;
@@ -880,9 +915,27 @@ async function broadcastStats() {
 
 io.on('connection', socket => broadcastStats());
 
+async function runSslChecks() {
+  const cfg = settings.load();
+  if (!cfg.sslAlertEnabled || !cfg.sslDomains || cfg.sslDomains.length === 0) return;
+  const results = await checkAllCerts(cfg.sslDomains);
+  const alerts = getNewAlerts(results);
+  for (const a of alerts) {
+    const urgency = a.milestone === 1 ? '🚨' : a.milestone === 7 ? '⚠️' : '🔔';
+    const msg = `${urgency} <b>SSL Cert Expiring: ${a.hostname}</b>\n\nExpires in <b>${a.daysLeft} day${a.daysLeft === 1 ? '' : 's'}</b>\nExpiry: ${new Date(a.expiry).toDateString()}`;
+    logAlert('ssl_expiry', `SSL expiry: ${a.hostname} in ${a.daysLeft}d`, `Milestone: ${a.milestone}d warning`);
+    if (cfg.telegramEnabled && cfg.telegramChatId) {
+      sendTelegramWithChatId(cfg.telegramChatId, msg).catch(e => console.error('[telegram]', e.message));
+    }
+    console.log(`[ssl] Alert fired for ${a.hostname} — ${a.daysLeft} days left`);
+  }
+}
+
 pm2Connect().then(() => {
   refreshDisk();
   setInterval(refreshDisk, 30000);
   setInterval(broadcastStats, 3000);
+  runSslChecks();
+  setInterval(runSslChecks, 12 * 60 * 60 * 1000); // every 12h
   server.listen(PORT, () => console.log(`App Stats backend running on port ${PORT}`));
 }).catch(err => { console.error('PM2 connect failed:', err); process.exit(1); });

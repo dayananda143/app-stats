@@ -143,6 +143,48 @@ export default function SettingsModal({ token, onClose }) {
                 </Field>
               </Section>
 
+              <Section title="Disk Space Alert">
+                <Field label="Disk usage threshold (%)" hint="Alert when root disk usage exceeds this">
+                  <div className="flex items-center gap-3">
+                    <NumberInput value={form.diskAlertPercent ?? 90} onChange={v => update('diskAlertPercent', v)} min={50} max={99} />
+                    <Toggle value={form.diskAlertEnabled ?? true} onChange={v => update('diskAlertEnabled', v)} />
+                  </div>
+                </Field>
+              </Section>
+
+              <Section title="SSL Certificate Alerts">
+                <Field label="Warn at 14 / 7 / 1 days before expiry" hint="Checks run every 12 hours">
+                  <Toggle value={form.sslAlertEnabled ?? true} onChange={v => update('sslAlertEnabled', v)} />
+                </Field>
+                <Field label="Domains to monitor">
+                  <div className="space-y-2">
+                    {(form.sslDomains || []).map((d, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={d}
+                          onChange={e => {
+                            const next = [...(form.sslDomains || [])];
+                            next[i] = e.target.value;
+                            update('sslDomains', next);
+                          }}
+                          placeholder="example.com"
+                          className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                        />
+                        <button
+                          onClick={() => update('sslDomains', (form.sslDomains || []).filter((_, j) => j !== i))}
+                          className="px-3 py-2 text-xs rounded-lg border border-red-800 bg-red-900/20 text-red-400 hover:bg-red-900/40 transition-colors"
+                        >✕</button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => update('sslDomains', [...(form.sslDomains || []), ''])}
+                      className="w-full py-1.5 text-xs rounded-lg border border-dashed border-slate-600 text-slate-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors"
+                    >+ Add domain</button>
+                  </div>
+                </Field>
+              </Section>
+
               <Section title="Telegram Notifications">
                 <div className="text-xs text-slate-500 mb-3 leading-relaxed">
                   Set <code className="text-slate-300 bg-slate-800 px-1 rounded">TELEGRAM_BOT_TOKEN</code> in <code className="text-slate-300 bg-slate-800 px-1 rounded">.env</code> via{' '}
