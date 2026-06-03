@@ -12,6 +12,7 @@ import SystemHistoryModal from './components/SystemHistoryModal';
 import HardwareSection from './components/HardwareSection';
 import ConnectivityCard from './components/ConnectivityCard';
 import LoginPage from './components/LoginPage';
+import BackupModal from './components/BackupModal';
 
 const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
   ? 'http://localhost:3006'
@@ -39,6 +40,7 @@ export default function App() {
   const [alertsModal, setAlertsModal] = useState(false);
   const [settingsModal, setSettingsModal] = useState(false);
   const [systemHistoryModal, setSystemHistoryModal] = useState(false);
+  const [backupModal, setBackupModal] = useState(false);
   const [actionState, setActionState] = useState({});
   const [alertCount, setAlertCount] = useState(0);
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('sort-by') || 'name');
@@ -205,6 +207,13 @@ export default function App() {
               )}
             </IconBtn>
 
+            {/* Backup */}
+            <IconBtn onClick={() => setBackupModal(true)} title="Database Backups">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3.75 3.75 0 013.068 5.952A4.5 4.5 0 0117.25 19.5H6.75z" />
+              </svg>
+            </IconBtn>
+
             {/* Settings */}
             <IconBtn onClick={() => setSettingsModal(true)} title="Settings">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -292,6 +301,7 @@ export default function App() {
         />
       )}
       {settingsModal && <SettingsModal token={token} onClose={() => setSettingsModal(false)} />}
+      {backupModal && <BackupModal token={token} onClose={() => setBackupModal(false)} />}
       {systemHistoryModal && <SystemHistoryModal token={token} onClose={() => setSystemHistoryModal(false)} />}
     </div>
   );
