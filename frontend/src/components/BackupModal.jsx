@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 const TARGETS = [
   { key: 'portfolio',        label: 'Stock Portfolio', type: 'SQLite',     icon: '📈' },
@@ -8,16 +9,39 @@ const TARGETS = [
   { key: 'cooking-recipes',  label: 'Cooking Recipes', type: 'SQLite',     icon: '🍳' },
 ];
 
+const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
+  ? 'http://localhost:3006'
+  : window.location.origin;
+
 export default function BackupModal({ token, onClose }) {
-  const [status, setStatus]   = useState({}); // { [key]: 'idle'|'running'|'ok'|'error' }
+  const [status, setStatus]   = useState({});
   const [logs, setLogs]       = useState([]);
   const [activeKey, setActiveKey] = useState(null);
   const [lastRun, setLastRun] = useState({});
-  const logRef = useRef(null);
+  const logRef  = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/backup/log', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setLastRun(d.lastRun || {})).catch(() => {});
+
+    // Connect socket for backup events
+    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'], auth: { token } });
+    socketRef.current = socket;
+
+    socket.on('backup_event', ({ target, line, isErr, done, code }) => {
+      if (line) setLogs(l => [...l, { text: line, err: !!isErr }]);
+      if (done) {
+        const ok = code === 0;
+        setStatus(s => ({ ...s, [target]: ok ? 'ok' : 'error' }));
+        if (ok) {
+          fetch('/api/backup/log', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json()).then(d => setLastRun(d.lastRun || {})).catch(() => {});
+        }
+      }
+    });
+
+    return () => socket.disconnect();
   }, [token]);
 
   useEffect(() => {
@@ -30,39 +54,12 @@ export default function BackupModal({ token, onClose }) {
     setStatus(s => ({ ...s, [target]: 'running' }));
 
     try {
-      const res = await fetch('/api/backup', {
+      const socketId = socketRef.current?.id;
+      await fetch('/api/backup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ target }),
+        body: JSON.stringify({ target, socketId }),
       });
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const parts = buf.split('\n\n');
-        buf = parts.pop();
-        for (const part of parts) {
-          const data = part.replace(/^data: /, '').trim();
-          if (!data) continue;
-          try {
-            const obj = JSON.parse(data);
-            if (obj.line) setLogs(l => [...l, { text: obj.line, err: !!obj.isErr }]);
-            if (obj.done) {
-              const ok = obj.code === 0;
-              setStatus(s => ({ ...s, [target]: ok ? 'ok' : 'error' }));
-              if (ok) {
-                fetch('/api/backup/log', { headers: { Authorization: `Bearer ${token}` } })
-                  .then(r => r.json()).then(d => setLastRun(d.lastRun || {})).catch(() => {});
-              }
-            }
-          } catch {}
-        }
-      }
     } catch (e) {
       setLogs(l => [...l, { text: `Error: ${e.message}`, err: true }]);
       setStatus(s => ({ ...s, [target]: 'error' }));
@@ -80,7 +77,7 @@ export default function BackupModal({ token, onClose }) {
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Database Backups</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Upload to Google Drive · Keep last 7</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -107,7 +104,7 @@ export default function BackupModal({ token, onClose }) {
               const ok      = s === 'ok';
               const err     = s === 'error';
               return (
-                <div key={t.key} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${activeKey === t.key ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40'}`}>
+                <div key={t.key} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${activeKey === t.key ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-100/50 dark:bg-slate-900/40'}`}>
                   <span className="text-xl shrink-0">{t.icon}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 dark:text-white">{t.label}</p>

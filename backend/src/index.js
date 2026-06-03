@@ -734,21 +734,21 @@ const BACKUP_SCRIPT = '/home/raspbi/backup-db.sh';
 const VALID_TARGETS = ['portfolio', 'expenses', 'app-stats', 'moneymatriz', 'cooking-recipes', 'all'];
 
 app.post('/api/backup', (req, res) => {
-  const { target } = req.body || {};
+  const { target, socketId } = req.body || {};
   if (!VALID_TARGETS.includes(target)) return res.status(400).json({ error: 'Invalid target' });
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
+  res.json({ ok: true });
 
-  const send = obj => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch {} };
+  const emit = obj => {
+    if (socketId) io.to(socketId).emit('backup_event', obj);
+    else io.emit('backup_event', obj);
+  };
+
   const child = spawn('bash', [BACKUP_SCRIPT, target]);
-  child.stdout.on('data', d => send({ line: d.toString() }));
-  child.stderr.on('data', d => send({ line: d.toString(), isErr: true }));
-  child.on('error', err => { send({ line: `Error: ${err.message}\n`, isErr: true }); send({ done: true, code: 1 }); res.end(); });
-  child.on('close', code => { send({ done: true, code }); res.end(); });
-  req.on('close', () => child.kill());
+  child.stdout.on('data', d => emit({ target, line: d.toString() }));
+  child.stderr.on('data', d => emit({ target, line: d.toString(), isErr: true }));
+  child.on('error', err => { emit({ target, line: `Error: ${err.message}\n`, isErr: true }); emit({ target, done: true, code: 1 }); });
+  child.on('close', code => { console.log(`[backup:${target}] exited with code ${code}`); emit({ target, done: true, code }); });
 });
 
 app.get('/api/backup/log', (req, res) => {
