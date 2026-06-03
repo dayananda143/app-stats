@@ -339,6 +339,19 @@ app.get('/api/auth/webauthn/registered', (req, res) => {
   res.json({ registered: count > 0 });
 });
 
+// Internal-only: backup script calls this to log a failed backup in the alerts DB
+app.post('/api/internal/backup-alert', (req, res) => {
+  if (req.ip !== '127.0.0.1' && req.ip !== '::1' && req.ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { target, message } = req.body || {};
+  if (!target) return res.status(400).json({ error: 'target required' });
+  try {
+    logAlert('backup_error', `Backup failed: ${target}`, message || null);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.use('/api', requireAuth);
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
@@ -714,6 +727,46 @@ app.post('/api/system/updates/install', (req, res) => {
   // If client disconnects mid-install, let apt finish — don't kill it.
   // Just mark the response as gone so send() calls are silently swallowed.
   req.on('close', () => { /* intentionally no-op: apt must be allowed to complete */ });
+});
+
+// ─── Backup ───────────────────────────────────────────────────────────────────
+const BACKUP_SCRIPT = '/home/raspbi/backup-db.sh';
+const VALID_TARGETS = ['portfolio', 'expenses', 'app-stats', 'moneymatriz', 'cooking-recipes', 'all'];
+
+app.post('/api/backup', (req, res) => {
+  const { target } = req.body || {};
+  if (!VALID_TARGETS.includes(target)) return res.status(400).json({ error: 'Invalid target' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = obj => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch {} };
+  const child = spawn('bash', [BACKUP_SCRIPT, target]);
+  child.stdout.on('data', d => send({ line: d.toString() }));
+  child.stderr.on('data', d => send({ line: d.toString(), isErr: true }));
+  child.on('error', err => { send({ line: `Error: ${err.message}\n`, isErr: true }); send({ done: true, code: 1 }); res.end(); });
+  child.on('close', code => { send({ done: true, code }); res.end(); });
+  req.on('close', () => child.kill());
+});
+
+app.get('/api/backup/log', (req, res) => {
+  const labelToKey = { 'Portfolio': 'portfolio', 'Expenses': 'expenses', 'App Stats': 'app-stats', 'Money Matriz': 'moneymatriz', 'Cooking Recipes': 'cooking-recipes' };
+  try {
+    const raw = fs.readFileSync('/home/raspbi/backup.log', 'utf8');
+    const lines = raw.trim().split('\n');
+    const lastRun = {};
+    for (const line of lines) {
+      const m = line.match(/(Portfolio|Expenses|App Stats|Money Matriz|Cooking Recipes) backup complete:.*?(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2})/);
+      if (m) {
+        const key = labelToKey[m[1]];
+        const ts = new Date(`${m[2]}T${m[3].replace('-', ':')}:00`).toISOString();
+        if (key) lastRun[key] = ts;
+      }
+    }
+    res.json({ lastRun });
+  } catch { res.json({ lastRun: {} }); }
 });
 
 // ─── PM2 internals ───────────────────────────────────────────────────────────
