@@ -1092,6 +1092,82 @@ async function runSslChecks() {
   }
 }
 
+// ─── Nginx visit log parser ───────────────────────────────────────────────────
+const NGINX_LOG = '/var/log/nginx/access.log';
+// Matches: IP - user [date] "request" status bytes "referer" "ua" host
+const LOG_RE = /^(\S+) - \S+ \[(\d{2}\/\w+\/\d{4}):\d{2}:\d{2}:\d{2} [^\]]+\] "[^"]*" \d+ \d+ "[^"]*" "[^"]*" (\S+)$/;
+
+function parseNginxLogs() {
+  let stat;
+  try { stat = fs.statSync(NGINX_LOG); } catch { return; }
+
+  const state = db.prepare('SELECT offset, inode FROM log_parse_state WHERE id = 1').get() || { offset: 0, inode: 0 };
+  // Detect rotation: inode changed or file is smaller than our offset
+  const startOffset = (stat.ino !== state.inode || stat.size < state.offset) ? 0 : state.offset;
+
+  if (startOffset === stat.size) return; // nothing new
+
+  let fd;
+  try { fd = fs.openSync(NGINX_LOG, 'r'); } catch { return; }
+
+  const chunkSize = 256 * 1024;
+  let pos = startOffset;
+  let leftover = '';
+  // bucket: { date_host: { ips: Set, count } }
+  const bucket = {};
+
+  while (pos < stat.size) {
+    const buf = Buffer.alloc(Math.min(chunkSize, stat.size - pos));
+    const read = fs.readSync(fd, buf, 0, buf.length, pos);
+    if (read === 0) break;
+    pos += read;
+    const chunk = leftover + buf.slice(0, read).toString('utf8');
+    const lines = chunk.split('\n');
+    leftover = lines.pop(); // incomplete last line
+    for (const line of lines) {
+      const m = line.match(LOG_RE);
+      if (!m) continue;
+      const [, ip, dateStr, host] = m;
+      // dateStr: "08/Jun/2026"  → "2026-Jun-08" → ISO
+      const [d, mon, y] = dateStr.split('/');
+      const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+      const date = `${y}-${months[mon] || '01'}-${d.padStart(2,'0')}`;
+      const key = `${date}\x00${host}`;
+      if (!bucket[key]) bucket[key] = { date, host, ips: new Set(), count: 0 };
+      bucket[key].count++;
+      bucket[key].ips.add(ip);
+    }
+  }
+  fs.closeSync(fd);
+
+  const upsert = db.prepare(`
+    INSERT INTO visit_counts (date, host, requests, unique_ips) VALUES (?, ?, ?, ?)
+    ON CONFLICT(date, host) DO UPDATE SET
+      requests   = requests + excluded.requests,
+      unique_ips = excluded.unique_ips
+  `);
+  const tx = db.transaction(() => {
+    for (const { date, host, ips, count } of Object.values(bucket)) {
+      upsert.run(date, host, count, ips.size);
+    }
+  });
+  tx();
+
+  db.prepare('INSERT OR REPLACE INTO log_parse_state (id, offset, inode) VALUES (1, ?, ?)').run(pos, stat.ino);
+}
+
+// ─── Visits API ───────────────────────────────────────────────────────────────
+app.get('/api/visits', requireAuth, (req, res) => {
+  const days = Math.min(parseInt(req.query.days) || 30, 365);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days + 1);
+  const dateStr = cutoff.toISOString().slice(0, 10);
+  const rows = db.prepare(
+    'SELECT date, host, requests, unique_ips FROM visit_counts WHERE date >= ? ORDER BY date ASC, requests DESC'
+  ).all(dateStr);
+  res.json(rows);
+});
+
 pm2Connect().then(() => {
   refreshDisk();
   setInterval(refreshDisk, 30000);
@@ -1100,5 +1176,7 @@ pm2Connect().then(() => {
   setInterval(runSslChecks, 12 * 60 * 60 * 1000); // every 12h
   checkPublicIp();
   setInterval(checkPublicIp, 15 * 60 * 1000); // every 15 min
+  parseNginxLogs();
+  setInterval(parseNginxLogs, 5 * 60 * 1000); // every 5 min
   server.listen(PORT, () => console.log(`App Stats backend running on port ${PORT}`));
 }).catch(err => { console.error('PM2 connect failed:', err); process.exit(1); });

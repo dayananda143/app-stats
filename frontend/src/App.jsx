@@ -13,6 +13,7 @@ import HardwareSection from './components/HardwareSection';
 import ConnectivityCard from './components/ConnectivityCard';
 import LoginPage from './components/LoginPage';
 import BackupModal from './components/BackupModal';
+import VisitsCard from './components/VisitsCard';
 
 const SOCKET_URL = typeof window !== 'undefined' && window.location.port === '5173'
   ? 'http://localhost:3006'
@@ -252,6 +253,9 @@ export default function App() {
 
         {/* Hardware section */}
         <HardwareSection token={token} />
+
+        {/* App visit counts */}
+        <VisitsCard token={token} />
 
         {/* Process grid */}
         <div>

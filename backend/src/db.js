@@ -40,10 +40,25 @@ db.exec(`
     created_at    INTEGER NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS visit_counts (
+    date TEXT NOT NULL,
+    host TEXT NOT NULL,
+    requests INTEGER NOT NULL DEFAULT 0,
+    unique_ips INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (date, host)
+  );
+
+  CREATE TABLE IF NOT EXISTS log_parse_state (
+    id       INTEGER PRIMARY KEY CHECK (id = 1),
+    offset   INTEGER NOT NULL DEFAULT 0,
+    inode    INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE INDEX IF NOT EXISTS idx_proc_history_name_ts ON process_history(name, ts);
   CREATE INDEX IF NOT EXISTS idx_sys_history_ts ON system_history(ts);
   CREATE INDEX IF NOT EXISTS idx_alerts_ts ON alerts(ts DESC);
   CREATE INDEX IF NOT EXISTS idx_webauthn_username ON webauthn_credentials(username);
+  CREATE INDEX IF NOT EXISTS idx_visit_counts_date ON visit_counts(date DESC);
 `);
 
 // Migrate: add columns (safe — throws if already exists)
